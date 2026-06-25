@@ -1,0 +1,49 @@
+{
+  "name": "runapi-ai/suno",
+  "description": "RunAPI Suno Composer package for PHP applications",
+  "type": "library",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "RunAPI",
+      "email": "contact@runapi.ai"
+    }
+  ],
+  "require": {
+    "php": ">=8.2",
+    "runapi-ai/core": "^0.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "RunApi\\Suno\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "RunApi\\Suno\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-main": "0.1.x-dev"
+    }
+  },
+  "minimum-stability": "stable",
+  "homepage": "https://runapi.ai/models/suno",
+  "support": {
+    "source": "https://github.com/runapi-ai/suno-php",
+    "docs": "https://runapi.ai/docs#sdk-suno",
+    "issues": "https://github.com/runapi-ai/suno-php/issues"
+  },
+  "keywords": [
+    "runapi",
+    "runapi-ai",
+    "php",
+    "composer",
+    "sdk",
+    "api",
+    "packagist",
+    "suno",
+    "suno-api"
+  ]
+}
