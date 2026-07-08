@@ -58,6 +58,95 @@ final class SunoClientTest extends TestCase
         self::assertSame('/api/v1/suno/generate_lyrics', $transport->requests[1]->getUri()->getPath());
     }
 
+    public function testReplaceSectionSupportsUploadedAudioSource(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"section_task","status":"processing"}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        self::assertSame('section_task', $client->replaceSection->create([
+            'upload_url' => 'https://cdn.runapi.ai/public/samples/music.mp3',
+            'model' => 'suno-v5.5',
+            'lyrics' => 'solo',
+            'full_lyrics' => '[Verse] solo',
+            'tags' => 'rock',
+            'title' => 'Song',
+            'infill_start_time' => 10.0,
+            'infill_end_time' => 20.0,
+        ])->id);
+
+        $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame('/api/v1/suno/replace_section', $transport->requests[0]->getUri()->getPath());
+        self::assertSame('https://cdn.runapi.ai/public/samples/music.mp3', $body['upload_url']);
+        self::assertSame('suno-v5.5', $body['model']);
+        self::assertArrayNotHasKey('task_id', $body);
+        self::assertArrayNotHasKey('audio_id', $body);
+    }
+
+    public function testReplaceSectionRejectsMixedSourcesBeforeRequest(): void
+    {
+        $transport = new QueueHttpClient([]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('task_id/audio_id cannot be combined with upload_url/model');
+
+        try {
+            $client->replaceSection->create([
+                'task_id' => 'task_1',
+                'audio_id' => 'audio_1',
+                'upload_url' => 'https://cdn.runapi.ai/public/samples/music.mp3',
+                'model' => 'suno-v5.5',
+                'lyrics' => 'solo',
+                'full_lyrics' => '[Verse] solo',
+                'tags' => 'rock',
+                'title' => 'Song',
+                'infill_start_time' => 10.0,
+                'infill_end_time' => 20.0,
+            ]);
+        } finally {
+            self::assertSame([], $transport->requests);
+        }
+    }
+
+    /**
+     * @dataProvider invalidReplaceSectionTimeWindows
+     */
+    public function testReplaceSectionRejectsInvalidTimeWindow(float $startTime, float $endTime, string $message): void
+    {
+        $transport = new QueueHttpClient([]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage($message);
+
+        try {
+            $client->replaceSection->create([
+                'task_id' => 'task_1',
+                'audio_id' => 'audio_1',
+                'lyrics' => 'solo',
+                'full_lyrics' => '[Verse] solo',
+                'tags' => 'rock',
+                'title' => 'Song',
+                'infill_start_time' => $startTime,
+                'infill_end_time' => $endTime,
+            ]);
+        } finally {
+            self::assertSame([], $transport->requests);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{float, float, string}>
+     */
+    public static function invalidReplaceSectionTimeWindows(): iterable
+    {
+        yield 'end before start' => [10.0, 5.0, 'infill_end_time must be greater than infill_start_time'];
+        yield 'duration too short' => [10.0, 15.0, 'replacement duration must be between 6 and 60 seconds'];
+        yield 'duration too long' => [10.0, 71.0, 'replacement duration must be between 6 and 60 seconds'];
+    }
+
     public function testTextToMusicRunReturnsTypedCompletedResponse(): void
     {
         $transport = new QueueHttpClient([
