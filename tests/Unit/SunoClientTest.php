@@ -14,6 +14,7 @@ use RunApi\Suno\Models\CheckVoiceResponse;
 use RunApi\Suno\Models\CompletedAudioTaskResponse;
 use RunApi\Suno\Models\GeneratePersonaResponse;
 use RunApi\Suno\Models\GetTimestampedLyricsResponse;
+use RunApi\Suno\Models\SeparateAudioStemsResponse;
 use RunApi\Suno\Resources\BoostStyle;
 use RunApi\Suno\Resources\CheckVoice;
 use RunApi\Suno\Resources\GenerateLyrics;
@@ -82,6 +83,76 @@ final class SunoClientTest extends TestCase
         self::assertSame('suno-v5.5', $body['model']);
         self::assertArrayNotHasKey('task_id', $body);
         self::assertArrayNotHasKey('audio_id', $body);
+    }
+
+    public function testSeparateAudioStemsAdvancedUsesCanonicalStemName(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"stems_task","status":"processing"}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        self::assertSame('stems_task', $client->separateAudioStems->create([
+            'task_id' => 'task_source',
+            'audio_id' => 'audio_source',
+            'type' => 'split_stem_advanced',
+            'stem_name' => 'Bass',
+        ])->id);
+
+        $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame('split_stem_advanced', $body['type']);
+        self::assertSame('Bass', $body['stem_name']);
+        self::assertArrayNotHasKey('stemName', $body);
+    }
+
+    public function testSeparateAudioStemsAdvancedRequiresStemNameBeforeRequest(): void
+    {
+        $transport = new QueueHttpClient([]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('stem_name is required when type is split_stem_advanced');
+
+        try {
+            $client->separateAudioStems->create([
+                'task_id' => 'task_source',
+                'audio_id' => 'audio_source',
+                'type' => 'split_stem_advanced',
+            ]);
+        } finally {
+            self::assertSame([], $transport->requests);
+        }
+    }
+
+    public function testSeparateAudioStemsAdvancedDecodesTypedPair(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"stems_task","status":"completed","separated_audios":{"pairs":[{"stem_name":"Bass","extracted_audio":{"id":"audio_bass","duration_seconds":116.28,"audio_url":"https://file.runapi.ai/bass.mp3"},"remaining_audio":{"id":"audio_without_bass","duration_seconds":116.28,"audio_url":"https://file.runapi.ai/without-bass.mp3"}}]}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $response = $client->separateAudioStems->get('stems_task');
+
+        self::assertInstanceOf(SeparateAudioStemsResponse::class, $response);
+        self::assertNotNull($response->separatedAudios);
+        self::assertSame('Bass', $response->separatedAudios->pairs[0]->stemName);
+        self::assertSame('audio_bass', $response->separatedAudios->pairs[0]->extractedAudio->id);
+        self::assertSame('https://file.runapi.ai/without-bass.mp3', $response->separatedAudios->pairs[0]->remainingAudio->audioUrl);
+    }
+
+    public function testSeparateAudioStemsDecodesLegacyUrls(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"stems_task","status":"completed","separated_audios":{"vocal_url":"https://file.runapi.ai/vocal.mp3","instrumental_url":"https://file.runapi.ai/instrumental.mp3"}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $response = $client->separateAudioStems->get('stems_task');
+
+        self::assertNotNull($response->separatedAudios);
+        self::assertSame('https://file.runapi.ai/vocal.mp3', $response->separatedAudios->vocalUrl);
+        self::assertSame('https://file.runapi.ai/instrumental.mp3', $response->separatedAudios->instrumentalUrl);
+        self::assertSame([], $response->separatedAudios->pairs);
     }
 
     public function testReplaceSectionRejectsMixedSourcesBeforeRequest(): void

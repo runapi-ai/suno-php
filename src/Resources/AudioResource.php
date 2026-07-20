@@ -20,19 +20,27 @@ readonly class AudioResource extends TypedConfiguredResource
      * Create a resource using the shared RunAPI HTTP transport.
      *
      * @param list<string> $models
+     * @param class-string<AudioTaskResponse> $responseClass
+     * @param class-string<CompletedAudioTaskResponse> $completedResponseClass
      */
-    public function __construct(HttpClient $http, string $endpointName, string $actionName, array $models = [])
-    {
+    public function __construct(
+        HttpClient $http,
+        string $endpointName,
+        string $actionName,
+        array $models = [],
+        string $responseClass = AudioTaskResponse::class,
+        string $completedResponseClass = CompletedAudioTaskResponse::class,
+    ) {
         parent::__construct(
             $http,
             '/api/v1/suno/' . $endpointName,
             'suno/' . $actionName,
-            AudioTaskResponse::class,
-            CompletedAudioTaskResponse::class,
+            $responseClass,
+            $completedResponseClass,
             $models,
             $actionName,
-            AudioTaskResponse::class,
-            CompletedAudioTaskResponse::class,
+            $responseClass,
+            $completedResponseClass,
         );
     }
 
