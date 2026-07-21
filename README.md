@@ -39,6 +39,8 @@ $result = $client->textToMusic->run([
 print_r($result->toArray());
 ```
 
+The client also exposes `$client->blendLyrics` for combining two caller-authored lyrics texts through the same `create()`, `get()`, and `run()` lifecycle.
+
 Use `create()` to submit a task and return quickly, `get()` to fetch the latest task state, and `run()` when a script should create and poll until completion. In web request handlers, prefer `create()` plus webhook or later `get()` polling so a worker is not held open.
 
 Returned file URLs are temporary. Download and store generated files in your own durable storage within the retention window.

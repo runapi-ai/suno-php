@@ -8,6 +8,7 @@ use RunApi\Core\BaseClient;
 use RunApi\Core\ClientOptions;
 use RunApi\Suno\Resources\AddInstrumental;
 use RunApi\Suno\Resources\AddVocals;
+use RunApi\Suno\Resources\BlendLyrics;
 use RunApi\Suno\Resources\BoostStyle;
 use RunApi\Suno\Resources\CheckVoice;
 use RunApi\Suno\Resources\ConvertAudio;
@@ -80,6 +81,10 @@ final class SunoClient extends BaseClient
      */
     public readonly GenerateLyrics $generateLyrics;
     /**
+     * Blend lyrics operations.
+     */
+    public readonly BlendLyrics $blendLyrics;
+    /**
      * Timestamped lyrics operations.
      */
     public readonly GetTimestampedLyrics $getTimestampedLyrics;
@@ -137,6 +142,7 @@ final class SunoClient extends BaseClient
         $this->convertAudio = ConvertAudio::fromHttp($this->http);
         $this->visualizeMusic = VisualizeMusic::fromHttp($this->http);
         $this->generateLyrics = GenerateLyrics::fromHttp($this->http);
+        $this->blendLyrics = BlendLyrics::fromHttp($this->http);
         $this->getTimestampedLyrics = GetTimestampedLyrics::fromHttp($this->http);
         $this->replaceSection = ReplaceSection::fromHttp($this->http);
         $this->createMashup = CreateMashup::fromHttp($this->http);

@@ -8,13 +8,16 @@ use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use RunApi\Core\ClientOptions;
 use RunApi\Core\Errors\ValidationException;
+use RunApi\Core\RequestOptions;
 use RunApi\Core\Tests\Fixtures\QueueHttpClient;
 use RunApi\Suno\Models\BoostStyleResponse;
 use RunApi\Suno\Models\CheckVoiceResponse;
 use RunApi\Suno\Models\CompletedAudioTaskResponse;
+use RunApi\Suno\Models\CompletedLyricsTaskResponse;
 use RunApi\Suno\Models\GeneratePersonaResponse;
 use RunApi\Suno\Models\GetTimestampedLyricsResponse;
 use RunApi\Suno\Models\SeparateAudioStemsResponse;
+use RunApi\Suno\Resources\BlendLyrics;
 use RunApi\Suno\Resources\BoostStyle;
 use RunApi\Suno\Resources\CheckVoice;
 use RunApi\Suno\Resources\GenerateLyrics;
@@ -32,6 +35,7 @@ final class SunoClientTest extends TestCase
 
         self::assertInstanceOf(TextToMusic::class, $client->textToMusic);
         self::assertInstanceOf(GenerateLyrics::class, $client->generateLyrics);
+        self::assertInstanceOf(BlendLyrics::class, $client->blendLyrics);
         self::assertInstanceOf(CheckVoice::class, $client->checkVoice);
         self::assertInstanceOf(GeneratePersona::class, $client->generatePersona);
         self::assertInstanceOf(GetTimestampedLyrics::class, $client->getTimestampedLyrics);
@@ -57,6 +61,29 @@ final class SunoClientTest extends TestCase
 
         self::assertSame('/api/v1/suno/text_to_music', $transport->requests[0]->getUri()->getPath());
         self::assertSame('/api/v1/suno/generate_lyrics', $transport->requests[1]->getUri()->getPath());
+    }
+
+    public function testBlendLyricsCreateAndRunUseTypedLyricsResponses(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"blend_task","status":"processing"}'),
+            new Response(200, [], '{"id":"blend_task_run","status":"processing"}'),
+            new Response(200, [], '{"id":"blend_task_run","status":"completed","lyrics":[{"title":"Mashup","text":"Blended lyrics"}]}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        self::assertSame('blend_task', $client->blendLyrics->create([
+            'lyrics_a' => 'First verse',
+            'lyrics_b' => 'Second verse',
+        ])->id);
+        $result = $client->blendLyrics->run([
+            'lyrics_a' => 'First verse',
+            'lyrics_b' => 'Second verse',
+        ], new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
+
+        self::assertInstanceOf(CompletedLyricsTaskResponse::class, $result);
+        self::assertSame('Blended lyrics', $result->lyrics[0]->text);
+        self::assertSame('/api/v1/suno/blend_lyrics', $transport->requests[0]->getUri()->getPath());
     }
 
     public function testReplaceSectionSupportsUploadedAudioSource(): void

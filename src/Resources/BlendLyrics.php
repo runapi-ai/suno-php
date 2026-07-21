@@ -9,26 +9,16 @@ use RunApi\Core\Models\TaskCreateResponse;
 use RunApi\Core\RequestOptions;
 use RunApi\Suno\Models\CompletedLyricsTaskResponse;
 
-/**
- * Produces AI-generated lyrics from a text prompt.
- */
-readonly class GenerateLyrics extends LyricsResource
+/** Blends two caller-authored lyrics texts. */
+readonly class BlendLyrics extends LyricsResource
 {
-    /**
-     * Submits a lyrics-generation task and returns immediately with a task id.
-     *
-     * @param array{prompt: string, callback_url?: string} $params
-     */
+    /** @param array{lyrics_a: string, lyrics_b: string, callback_url?: string} $params */
     public function create(array $params, ?RequestOptions $options = null): TaskCreateResponse
     {
         return parent::create($params, $options);
     }
 
-    /**
-     * Submits a lyrics-generation task and polls until it completes.
-     *
-     * @param array{prompt: string, callback_url?: string} $params
-     */
+    /** @param array{lyrics_a: string, lyrics_b: string, callback_url?: string} $params */
     public function run(array $params, ?RequestOptions $options = null): CompletedLyricsTaskResponse
     {
         return parent::run($params, $options);
@@ -36,6 +26,6 @@ readonly class GenerateLyrics extends LyricsResource
 
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'generate_lyrics', 'generate-lyrics');
+        return new self($http, 'blend_lyrics', 'blend-lyrics');
     }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.2.0](https://github.com/runapi-ai/suno-php/releases/tag/v0.2.0) - 2026-07-21
+
+### Added
+- Add lyrics generation queries and lyric blending with typed request and response models.
+
+
 ## [v0.1.2](https://github.com/runapi-ai/suno-php/releases/tag/v0.1.2) - 2026-07-20
 
 ### Added
