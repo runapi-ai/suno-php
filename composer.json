@@ -33,7 +33,7 @@
   "homepage": "https://runapi.ai/models/suno",
   "support": {
     "source": "https://github.com/runapi-ai/suno-php",
-    "docs": "https://runapi.ai/docs#sdk-suno",
+    "docs": "https://runapi.ai/docs/resources/sdks",
     "issues": "https://github.com/runapi-ai/suno-php/issues"
   },
   "keywords": [

@@ -50,8 +50,8 @@ All SDK exceptions inherit from `RunApi\Core\Errors\RunApiException`, including 
 ## Links
 
 - Model page: https://runapi.ai/models/suno
-- SDK docs: https://runapi.ai/docs#sdk-suno
-- Product docs: https://runapi.ai/docs#suno
+- SDK docs: https://runapi.ai/docs/resources/sdks
+- Product docs: https://runapi.ai/docs/api/suno/text-to-music
 - Pricing and rate limits: https://runapi.ai/models/suno/v4
 - Full catalog: https://runapi.ai/models
 - GitHub repository: https://github.com/runapi-ai/suno-php
