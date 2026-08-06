@@ -7,6 +7,7 @@ namespace RunApi\Suno;
 use RunApi\Core\BaseClient;
 use RunApi\Core\ClientOptions;
 use RunApi\Suno\Resources\AddInstrumental;
+use RunApi\Suno\Resources\AddSamples;
 use RunApi\Suno\Resources\AddVocals;
 use RunApi\Suno\Resources\BlendLyrics;
 use RunApi\Suno\Resources\BoostStyle;
@@ -22,8 +23,10 @@ use RunApi\Suno\Resources\GeneratePersona;
 use RunApi\Suno\Resources\GenerateVoice;
 use RunApi\Suno\Resources\GetTimestampedLyrics;
 use RunApi\Suno\Resources\RegenerateValidationPhrase;
+use RunApi\Suno\Resources\RemasterAudio;
 use RunApi\Suno\Resources\ReplaceSection;
 use RunApi\Suno\Resources\SeparateAudioStems;
+use RunApi\Suno\Resources\StitchAudio;
 use RunApi\Suno\Resources\TextToMusic;
 use RunApi\Suno\Resources\TextToSound;
 use RunApi\Suno\Resources\VisualizeMusic;
@@ -44,6 +47,9 @@ final class SunoClient extends BaseClient
      * Extend music operations.
      */
     public readonly ExtendMusic $extendMusic;
+    public readonly StitchAudio $stitchAudio;
+    public readonly RemasterAudio $remasterAudio;
+    public readonly AddSamples $addSamples;
     /**
      * Generate artwork operations.
      */
@@ -133,6 +139,9 @@ final class SunoClient extends BaseClient
         parent::__construct($options);
         $this->textToMusic = TextToMusic::fromHttp($this->http);
         $this->extendMusic = ExtendMusic::fromHttp($this->http);
+        $this->stitchAudio = StitchAudio::fromHttp($this->http);
+        $this->remasterAudio = RemasterAudio::fromHttp($this->http);
+        $this->addSamples = AddSamples::fromHttp($this->http);
         $this->generateArtwork = GenerateArtwork::fromHttp($this->http);
         $this->coverAudio = CoverAudio::fromHttp($this->http);
         $this->addInstrumental = AddInstrumental::fromHttp($this->http);

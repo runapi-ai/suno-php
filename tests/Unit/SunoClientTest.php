@@ -17,6 +17,7 @@ use RunApi\Suno\Models\CompletedLyricsTaskResponse;
 use RunApi\Suno\Models\GeneratePersonaResponse;
 use RunApi\Suno\Models\GetTimestampedLyricsResponse;
 use RunApi\Suno\Models\SeparateAudioStemsResponse;
+use RunApi\Suno\Resources\AddSamples;
 use RunApi\Suno\Resources\BlendLyrics;
 use RunApi\Suno\Resources\BoostStyle;
 use RunApi\Suno\Resources\CheckVoice;
@@ -40,6 +41,39 @@ final class SunoClientTest extends TestCase
         self::assertInstanceOf(GeneratePersona::class, $client->generatePersona);
         self::assertInstanceOf(GetTimestampedLyrics::class, $client->getTimestampedLyrics);
         self::assertInstanceOf(BoostStyle::class, $client->boostStyle);
+        self::assertInstanceOf(AddSamples::class, $client->addSamples);
+    }
+
+    public function testAudioActionsPostPublicRequestShapes(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"stitch","status":"processing"}'),
+            new Response(200, [], '{"id":"remaster","status":"processing"}'),
+            new Response(200, [], '{"id":"samples","status":"processing"}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+        $owned = ['model' => 'suno-v5', 'source_task_id' => 'source', 'audio_id' => 'audio'];
+        $samples = ['model' => 'suno-v5', 'audio_url' => 'https://file.runapi.ai/source.mp3', 'start_seconds' => 5, 'end_seconds' => 20];
+
+        $client->stitchAudio->create($owned);
+        $client->remasterAudio->create($owned);
+        $client->addSamples->create($samples);
+
+        self::assertSame('/api/v1/suno/stitch_audio', $transport->requests[0]->getUri()->getPath());
+        self::assertSame('/api/v1/suno/remaster_audio', $transport->requests[1]->getUri()->getPath());
+        self::assertSame('/api/v1/suno/add_samples', $transport->requests[2]->getUri()->getPath());
+        self::assertSame($samples, json_decode((string) $transport->requests[2]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function testAddSamplesRejectsInvalidWindow(): void
+    {
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: new QueueHttpClient([]), maxRetries: 0));
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('end_seconds must be greater than start_seconds');
+        $client->addSamples->create([
+            'model' => 'suno-v5', 'audio_url' => 'https://file.runapi.ai/source.mp3',
+            'start_seconds' => 20, 'end_seconds' => 20,
+        ]);
     }
 
     public function testTextToMusicAndGenerateLyricsCreate(): void
