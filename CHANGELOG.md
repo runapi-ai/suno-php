@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.3.0](https://github.com/runapi-ai/suno-php/releases/tag/v0.3.0) - 2026-08-10
+
+### Added
+- Add music inspiration from one to four caller-supplied audio URLs.
+
+
 ## [v0.2.1](https://github.com/runapi-ai/suno-php/releases/tag/v0.2.1) - 2026-08-06
 
 ### Added

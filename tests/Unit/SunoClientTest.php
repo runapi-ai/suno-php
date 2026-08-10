@@ -24,6 +24,7 @@ use RunApi\Suno\Resources\CheckVoice;
 use RunApi\Suno\Resources\GenerateLyrics;
 use RunApi\Suno\Resources\GeneratePersona;
 use RunApi\Suno\Resources\GetTimestampedLyrics;
+use RunApi\Suno\Resources\InspireMusic;
 use RunApi\Suno\Resources\SyncResource;
 use RunApi\Suno\Resources\TextToMusic;
 use RunApi\Suno\SunoClient;
@@ -42,6 +43,7 @@ final class SunoClientTest extends TestCase
         self::assertInstanceOf(GetTimestampedLyrics::class, $client->getTimestampedLyrics);
         self::assertInstanceOf(BoostStyle::class, $client->boostStyle);
         self::assertInstanceOf(AddSamples::class, $client->addSamples);
+        self::assertInstanceOf(InspireMusic::class, $client->inspireMusic);
     }
 
     public function testAudioActionsPostPublicRequestShapes(): void
@@ -50,19 +52,29 @@ final class SunoClientTest extends TestCase
             new Response(200, [], '{"id":"stitch","status":"processing"}'),
             new Response(200, [], '{"id":"remaster","status":"processing"}'),
             new Response(200, [], '{"id":"samples","status":"processing"}'),
+            new Response(200, [], '{"id":"inspiration","status":"processing"}'),
         ]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
         $owned = ['model' => 'suno-v5', 'source_task_id' => 'source', 'audio_id' => 'audio'];
         $samples = ['model' => 'suno-v5', 'audio_url' => 'https://file.runapi.ai/source.mp3', 'start_seconds' => 5, 'end_seconds' => 20];
+        $inspiration = [
+            'model' => 'suno-v5',
+            'audio_urls' => ['https://file.runapi.ai/inspiration-one.mp3', 'https://file.runapi.ai/inspiration-two.mp3'],
+        ];
 
         $client->stitchAudio->create($owned);
         $client->remasterAudio->create($owned);
         $client->addSamples->create($samples);
+        $client->inspireMusic->create($inspiration);
 
         self::assertSame('/api/v1/suno/stitch_audio', $transport->requests[0]->getUri()->getPath());
         self::assertSame('/api/v1/suno/remaster_audio', $transport->requests[1]->getUri()->getPath());
         self::assertSame('/api/v1/suno/add_samples', $transport->requests[2]->getUri()->getPath());
         self::assertSame($samples, json_decode((string) $transport->requests[2]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertSame('/api/v1/suno/inspire_music', $transport->requests[3]->getUri()->getPath());
+        $inspirationBody = json_decode((string) $transport->requests[3]->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame($inspiration, $inspirationBody);
+        self::assertArrayNotHasKey('audio_id', $inspirationBody);
     }
 
     public function testAddSamplesRejectsInvalidWindow(): void

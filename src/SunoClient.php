@@ -22,6 +22,7 @@ use RunApi\Suno\Resources\GenerateMidi;
 use RunApi\Suno\Resources\GeneratePersona;
 use RunApi\Suno\Resources\GenerateVoice;
 use RunApi\Suno\Resources\GetTimestampedLyrics;
+use RunApi\Suno\Resources\InspireMusic;
 use RunApi\Suno\Resources\RegenerateValidationPhrase;
 use RunApi\Suno\Resources\RemasterAudio;
 use RunApi\Suno\Resources\ReplaceSection;
@@ -50,6 +51,7 @@ final class SunoClient extends BaseClient
     public readonly StitchAudio $stitchAudio;
     public readonly RemasterAudio $remasterAudio;
     public readonly AddSamples $addSamples;
+    public readonly InspireMusic $inspireMusic;
     /**
      * Generate artwork operations.
      */
@@ -142,6 +144,7 @@ final class SunoClient extends BaseClient
         $this->stitchAudio = StitchAudio::fromHttp($this->http);
         $this->remasterAudio = RemasterAudio::fromHttp($this->http);
         $this->addSamples = AddSamples::fromHttp($this->http);
+        $this->inspireMusic = InspireMusic::fromHttp($this->http);
         $this->generateArtwork = GenerateArtwork::fromHttp($this->http);
         $this->coverAudio = CoverAudio::fromHttp($this->http);
         $this->addInstrumental = AddInstrumental::fromHttp($this->http);
