@@ -287,8 +287,63 @@ final class SunoClientTest extends TestCase
     public static function invalidReplaceSectionTimeWindows(): iterable
     {
         yield 'end before start' => [10.0, 5.0, 'infill_end_time must be greater than infill_start_time'];
-        yield 'duration too short' => [10.0, 15.0, 'replacement duration must be between 6 and 60 seconds'];
-        yield 'duration too long' => [10.0, 71.0, 'replacement duration must be between 6 and 60 seconds'];
+        yield 'duration too short' => [10.0, 19.999, 'replacement duration must be at least 10 seconds'];
+    }
+
+    public function testReplaceSectionAcceptsDurationLongerThanSixtySeconds(): void
+    {
+        $transport = new QueueHttpClient([new Response(200, [], '{"id":"task_1","status":"processing"}')]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $client->replaceSection->create([
+            'task_id' => 'task_1',
+            'audio_id' => 'audio_1',
+            'lyrics' => 'solo',
+            'full_lyrics' => '[Verse] solo',
+            'tags' => 'rock',
+            'title' => 'Song',
+            'infill_start_time' => 10.0,
+            'infill_end_time' => 71.0,
+        ]);
+
+        self::assertCount(1, $transport->requests);
+    }
+
+    public function testReplaceSectionAcceptsDecimalDurationOfExactlyTenSeconds(): void
+    {
+        $transport = new QueueHttpClient([new Response(200, [], '{"id":"task_1","status":"processing"}')]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $client->replaceSection->create([
+            'task_id' => 'task_1',
+            'audio_id' => 'audio_1',
+            'lyrics' => 'solo',
+            'full_lyrics' => '[Verse] solo',
+            'tags' => 'rock',
+            'title' => 'Song',
+            'infill_start_time' => 6.016,
+            'infill_end_time' => 16.016,
+        ]);
+
+        self::assertCount(1, $transport->requests);
+    }
+
+    public function testReplaceSectionRejectsNonFiniteTimes(): void
+    {
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: new QueueHttpClient([]), maxRetries: 0));
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('infill_end_time must be a finite number');
+        $client->replaceSection->create([
+            'task_id' => 'task_1',
+            'audio_id' => 'audio_1',
+            'lyrics' => 'solo',
+            'full_lyrics' => '[Verse] solo',
+            'tags' => 'rock',
+            'title' => 'Song',
+            'infill_start_time' => 0.0,
+            'infill_end_time' => INF,
+        ]);
     }
 
     public function testTextToMusicRunReturnsTypedCompletedResponse(): void

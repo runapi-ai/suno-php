@@ -70,8 +70,8 @@ readonly class ReplaceSection extends AudioResource
         }
 
         $duration = $endTime - $startTime;
-        if ($duration < 6.0 || $duration > 60.0) {
-            throw new ValidationException('replacement duration must be between 6 and 60 seconds');
+        if ($duration + 1e-9 < 10.0) {
+            throw new ValidationException('replacement duration must be at least 10 seconds');
         }
     }
 
@@ -81,11 +81,11 @@ readonly class ReplaceSection extends AudioResource
     private function numberValue(array $params, string $field): float
     {
         $value = $params[$field] ?? null;
-        if (is_int($value) || is_float($value)) {
+        if ((is_int($value) || is_float($value)) && is_finite((float) $value)) {
             return (float) $value;
         }
 
-        throw new ValidationException($field . ' must be a number');
+        throw new ValidationException($field . ' must be a finite number');
     }
 
     /**

@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.3.1](https://github.com/runapi-ai/suno-php/releases/tag/v0.3.1) - 2026-08-14
+
+### Fixed
+- Require replace-section windows to be at least 10 seconds without applying the removed 60-second maximum.
+
+
 ## [v0.3.0](https://github.com/runapi-ai/suno-php/releases/tag/v0.3.0) - 2026-08-10
 
 ### Added
