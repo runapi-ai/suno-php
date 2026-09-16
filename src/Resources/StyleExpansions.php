@@ -9,13 +9,13 @@ use RunApi\Core\RequestOptions;
 use RunApi\Suno\Models\BoostStyleResponse;
 
 /**
- * Generates style/genre tags from a text description for use in style fields. Synchronous (run() only).
- *
- * @deprecated Use StyleExpansions instead.
+ * Expands a style description into genre tags for use in style fields. Synchronous (run() only).
  */
-readonly class BoostStyle extends SyncResource
+readonly class StyleExpansions extends SyncResource
 {
-    public const ACTION = 'suno/boost-style';
+    public const ACTION = 'suno/style-expansions';
+
+    private const ENDPOINT = '/api/v1/style_expansions';
 
     /**
      * Create the resource using the shared RunAPI HTTP transport.
@@ -30,13 +30,13 @@ readonly class BoostStyle extends SyncResource
      */
     public function __construct(HttpClient $http)
     {
-        parent::__construct($http, '/api/v1/suno/boost_style', self::ACTION, BoostStyleResponse::class, ['description']);
+        parent::__construct($http, self::ENDPOINT, self::ACTION, BoostStyleResponse::class, ['description']);
     }
 
     /**
-     * Generates style/genre tags from a text description and returns the result.
+     * Expands a style description into genre tags and returns the result.
      *
-     * @param array{description: string, name?: string} $params
+     * @param array{description: string} $params
      */
     public function run(array $params, ?RequestOptions $options = null): BoostStyleResponse
     {

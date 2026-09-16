@@ -9,13 +9,13 @@ use RunApi\Core\RequestOptions;
 use RunApi\Suno\Models\GetTimestampedLyricsResponse;
 
 /**
- * Retrieves word-level timing alignment for a track. Synchronous (run() only).
- *
- * @deprecated Use TimestampedLyrics instead, which names a RunAPI audio resource.
+ * Retrieves word-level timing alignment for an existing track. Synchronous (run() only).
  */
-readonly class GetTimestampedLyrics extends SyncResource
+readonly class TimestampedLyrics extends SyncResource
 {
-    public const ACTION = 'suno/get-timestamped-lyrics';
+    public const ACTION = 'suno/timestamped-lyrics';
+
+    private const ENDPOINT = '/api/v1/timestamped_lyrics';
 
     /**
      * Create the resource using the shared RunAPI HTTP transport.
@@ -30,19 +30,13 @@ readonly class GetTimestampedLyrics extends SyncResource
      */
     public function __construct(HttpClient $http)
     {
-        parent::__construct(
-            $http,
-            '/api/v1/suno/get_timestamped_lyrics',
-            self::ACTION,
-            GetTimestampedLyricsResponse::class,
-            ['task_id', 'audio_id'],
-        );
+        parent::__construct($http, self::ENDPOINT, self::ACTION, GetTimestampedLyricsResponse::class, ['source_audio_id']);
     }
 
     /**
      * Retrieves word-level timing alignment for a track and returns the result.
      *
-     * @param array{task_id: string, audio_id: string} $params
+     * @param array{source_audio_id: string, source_task_id?: string} $params
      */
     public function run(array $params, ?RequestOptions $options = null): GetTimestampedLyricsResponse
     {

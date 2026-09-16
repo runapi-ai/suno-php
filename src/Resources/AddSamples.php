@@ -7,11 +7,18 @@ namespace RunApi\Suno\Resources;
 use RunApi\Core\Errors\ValidationException;
 use RunApi\Core\Http\HttpClient;
 
+/**
+ * Adds a sample from an uploaded track to a new generation.
+ *
+ * @deprecated Use MusicFromSample instead, which names the sampled range of a RunAPI audio resource.
+ */
 readonly class AddSamples extends AudioResource
 {
+    public const ACTION = 'suno/add-samples';
+
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'add_samples', 'add-samples');
+        return new self($http, 'add_samples', self::ACTION);
     }
 
     protected function validate(array $params, string $model): void

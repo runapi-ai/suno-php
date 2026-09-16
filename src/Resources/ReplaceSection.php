@@ -12,12 +12,14 @@ use RunApi\Core\Http\HttpClient;
  */
 readonly class ReplaceSection extends AudioResource
 {
+    public const ACTION = 'suno/replace-section';
+
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'replace_section', 'replace-section');
+        return new self($http, 'replace_section', self::ACTION);
     }
 
     /**

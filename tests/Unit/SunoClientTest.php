@@ -8,16 +8,28 @@ use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use RunApi\Core\ClientOptions;
 use RunApi\Core\Errors\ValidationException;
+use RunApi\Core\Models\TaskBillingFacts;
+use RunApi\Core\Models\TaskCreateResponse;
 use RunApi\Core\RequestOptions;
 use RunApi\Core\Tests\Fixtures\QueueHttpClient;
+use RunApi\Suno\Models\AudioExportResponse;
 use RunApi\Suno\Models\BoostStyleResponse;
 use RunApi\Suno\Models\CheckVoiceResponse;
+use RunApi\Suno\Models\CompletedAudioExportResponse;
 use RunApi\Suno\Models\CompletedAudioTaskResponse;
 use RunApi\Suno\Models\CompletedLyricsTaskResponse;
+use RunApi\Suno\Models\CompletedMusicFromSampleResponse;
+use RunApi\Suno\Models\CompletedMusicVisualizationResponse;
 use RunApi\Suno\Models\GeneratePersonaResponse;
 use RunApi\Suno\Models\GetTimestampedLyricsResponse;
+use RunApi\Suno\Models\PersonaCreationResponse;
+use RunApi\Suno\Models\PersonaResourceResponse;
+use RunApi\Suno\Models\ResourceStatus;
 use RunApi\Suno\Models\SeparateAudioStemsResponse;
+use RunApi\Suno\Models\VoiceCreationResponse;
+use RunApi\Suno\Models\VoiceResourceResponse;
 use RunApi\Suno\Resources\AddSamples;
+use RunApi\Suno\Resources\AudioExports;
 use RunApi\Suno\Resources\BlendLyrics;
 use RunApi\Suno\Resources\BoostStyle;
 use RunApi\Suno\Resources\CheckVoice;
@@ -25,8 +37,14 @@ use RunApi\Suno\Resources\GenerateLyrics;
 use RunApi\Suno\Resources\GeneratePersona;
 use RunApi\Suno\Resources\GetTimestampedLyrics;
 use RunApi\Suno\Resources\InspireMusic;
+use RunApi\Suno\Resources\MusicFromSample;
+use RunApi\Suno\Resources\MusicVisualizations;
+use RunApi\Suno\Resources\Personas;
+use RunApi\Suno\Resources\StyleExpansions;
 use RunApi\Suno\Resources\SyncResource;
 use RunApi\Suno\Resources\TextToMusic;
+use RunApi\Suno\Resources\TimestampedLyrics;
+use RunApi\Suno\Resources\Voices;
 use RunApi\Suno\SunoClient;
 
 final class SunoClientTest extends TestCase
@@ -44,6 +62,13 @@ final class SunoClientTest extends TestCase
         self::assertInstanceOf(BoostStyle::class, $client->boostStyle);
         self::assertInstanceOf(AddSamples::class, $client->addSamples);
         self::assertInstanceOf(InspireMusic::class, $client->inspireMusic);
+        self::assertInstanceOf(Personas::class, $client->personas);
+        self::assertInstanceOf(Voices::class, $client->voices);
+        self::assertInstanceOf(StyleExpansions::class, $client->styleExpansions);
+        self::assertInstanceOf(TimestampedLyrics::class, $client->timestampedLyrics);
+        self::assertInstanceOf(AudioExports::class, $client->audioExports);
+        self::assertInstanceOf(MusicVisualizations::class, $client->musicVisualizations);
+        self::assertInstanceOf(MusicFromSample::class, $client->musicFromSample);
     }
 
     public function testAudioActionsPostPublicRequestShapes(): void
@@ -56,7 +81,7 @@ final class SunoClientTest extends TestCase
         ]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
         $owned = ['model' => 'suno-v5', 'source_task_id' => 'source', 'audio_id' => 'audio'];
-        $samples = ['model' => 'suno-v5', 'audio_url' => 'https://file.runapi.ai/source.mp3', 'start_seconds' => 5, 'end_seconds' => 20];
+        $samples = ['model' => 'suno-v5', 'audio_url' => 'https://file.runapi.ai/source.mp3', 'prompt' => 'Add a crisp handclap sample to the chorus', 'start_seconds' => 5, 'end_seconds' => 20];
         $inspiration = [
             'model' => 'suno-v5',
             'audio_urls' => ['https://file.runapi.ai/inspiration-one.mp3', 'https://file.runapi.ai/inspiration-two.mp3'],
@@ -422,6 +447,253 @@ final class SunoClientTest extends TestCase
 
         try {
             $this->runWithoutRequiredFields($client->checkVoice);
+        } finally {
+            self::assertSame([], $transport->requests);
+        }
+    }
+
+    public function testPersonasCreateAndReadRunAPIResource(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"persona":{"id":"res_persona","name":"Narrator","description":"warm"},"billing":{"reservation":null,"settlement":null,"refund":null}}'),
+            new Response(200, [], '{"persona":{"id":"res_persona","name":"Narrator","description":"warm"},"status":"available","billing":{}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $created = $client->personas->run([
+            'source_task_id' => 'song_task',
+            'source_audio_id' => 'audio_1',
+            'name' => 'Narrator',
+            'description' => 'warm',
+        ]);
+        $resource = $client->personas->get('res_persona');
+
+        self::assertInstanceOf(PersonaCreationResponse::class, $created);
+        self::assertNotNull($created->persona);
+        self::assertSame('res_persona', $created->persona->id);
+        self::assertSame('Narrator', $created->persona->name);
+        self::assertSame('warm', $created->persona->description);
+
+        self::assertInstanceOf(PersonaResourceResponse::class, $resource);
+        self::assertSame('res_persona', $resource->persona->id);
+        self::assertSame('Narrator', $resource->persona->name);
+        self::assertSame(ResourceStatus::AVAILABLE, $resource->status);
+
+        self::assertSame('POST', $transport->requests[0]->getMethod());
+        self::assertSame('/api/v1/personas', $transport->requests[0]->getUri()->getPath());
+        self::assertSame([
+            'source_task_id' => 'song_task',
+            'source_audio_id' => 'audio_1',
+            'name' => 'Narrator',
+            'description' => 'warm',
+        ], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertSame('GET', $transport->requests[1]->getMethod());
+        self::assertSame('/api/v1/personas/res_persona', $transport->requests[1]->getUri()->getPath());
+    }
+
+    public function testPersonasFollowAnAcceptedTaskToItsStoredPersona(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(202, ['Location' => '/api/v1/tasks/local_persona'], '{"id":"local_persona","status":"pending"}'),
+            new Response(200, [], '{"id":"local_persona","status":"completed","response":{"status":200,"content_type":"application/json","body":{"persona":{"id":"res_local","name":"Local"}}}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $created = $client->personas->run([
+            'source_task_id' => 'song_task',
+            'source_audio_id' => 'audio_1',
+            'name' => 'Local',
+            'description' => 'queued for local execution',
+        ], new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
+
+        self::assertInstanceOf(PersonaCreationResponse::class, $created);
+        self::assertSame('res_local', $created->persona?->id);
+        self::assertSame('/api/v1/tasks/local_persona', $transport->requests[1]->getUri()->getPath());
+    }
+
+    public function testVoicesCreateAndReadRunAPIResource(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"voice":{"id":"res_voice","name":"Studio Voice"},"status":"completed","billing":{"reservation":null,"settlement":null,"refund":null}}'),
+            new Response(200, [], '{"voice":{"id":"res_voice","name":"Studio Voice"},"status":"available","billing":{}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $created = $client->voices->run([
+            'source_audio_url' => 'https://file.runapi.ai/voice.mp3',
+            'name' => 'Studio Voice',
+        ]);
+        $resource = $client->voices->get('res_voice');
+
+        self::assertInstanceOf(VoiceCreationResponse::class, $created);
+        self::assertNotNull($created->voice);
+        self::assertSame('res_voice', $created->voice->id);
+        self::assertSame('Studio Voice', $created->voice->name);
+
+        self::assertInstanceOf(VoiceResourceResponse::class, $resource);
+        self::assertSame('res_voice', $resource->voice->id);
+        self::assertSame(ResourceStatus::AVAILABLE, $resource->status);
+
+        self::assertSame('POST', $transport->requests[0]->getMethod());
+        self::assertSame('/api/v1/voices', $transport->requests[0]->getUri()->getPath());
+        self::assertSame([
+            'source_audio_url' => 'https://file.runapi.ai/voice.mp3',
+            'name' => 'Studio Voice',
+        ], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertSame('GET', $transport->requests[1]->getMethod());
+        self::assertSame('/api/v1/voices/res_voice', $transport->requests[1]->getUri()->getPath());
+    }
+
+    public function testStyleExpansionsExpandADescription(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"style":"dream pop, soft drums","billing":{"reservation":null,"settlement":null,"refund":null}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $style = $client->styleExpansions->run(['description' => 'dreamy pop']);
+
+        self::assertInstanceOf(BoostStyleResponse::class, $style);
+        self::assertSame('dream pop, soft drums', $style->style);
+
+        self::assertSame('POST', $transport->requests[0]->getMethod());
+        self::assertSame('/api/v1/style_expansions', $transport->requests[0]->getUri()->getPath());
+        self::assertSame(['description' => 'dreamy pop'], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function testTimestampedLyricsAlignAnAudioResource(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"aligned_words":[{"word":"hello","success":true,"start_time":0,"end_time":0.5,"palign":0.98}],"waveform_data":[0,0.5,1],"hoot_cer":0.02,"is_streamed":false,"billing":{"reservation":null,"settlement":null,"refund":null}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $lyrics = $client->timestampedLyrics->run([
+            'source_audio_id' => 'res_audio',
+            'source_task_id' => 'song_task',
+        ]);
+
+        self::assertInstanceOf(GetTimestampedLyricsResponse::class, $lyrics);
+        self::assertSame('hello', $lyrics->alignedWords[0]->word);
+        self::assertSame(0.5, $lyrics->waveformData[1]);
+        self::assertSame(0.02, $lyrics->hootCer);
+        self::assertFalse($lyrics->isStreamed);
+
+        self::assertSame('POST', $transport->requests[0]->getMethod());
+        self::assertSame('/api/v1/timestamped_lyrics', $transport->requests[0]->getUri()->getPath());
+        self::assertSame([
+            'source_audio_id' => 'res_audio',
+            'source_task_id' => 'song_task',
+        ], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function testAudioExportsCreatePollAndRun(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"export_task","status":"processing","billing":{"reservation":null,"settlement":null,"refund":null}}'),
+            new Response(200, [], '{"id":"export_task","status":"processing"}'),
+            new Response(200, [], '{"id":"export_task","status":"processing"}'),
+            new Response(200, [], '{"id":"export_task","status":"completed","wav_url":"https://file.runapi.ai/track.wav","original_task_id":"song_task","billing":{"reservation":null,"settlement":null,"refund":null}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+        $params = ['source_audio_id' => 'res_audio'];
+
+        $created = $client->audioExports->create($params);
+        $polled = $client->audioExports->get('export_task');
+        $completed = $client->audioExports->run($params, new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
+
+        self::assertInstanceOf(TaskCreateResponse::class, $created);
+        self::assertSame('export_task', $created->id);
+        self::assertInstanceOf(AudioExportResponse::class, $polled);
+        self::assertSame('processing', $polled->status);
+        self::assertNull($polled->wavUrl);
+        self::assertInstanceOf(CompletedAudioExportResponse::class, $completed);
+        self::assertSame('https://file.runapi.ai/track.wav', $completed->wavUrl);
+        self::assertSame('song_task', $completed->originalTaskId);
+        self::assertInstanceOf(TaskBillingFacts::class, $completed->billing);
+
+        self::assertSame('POST', $transport->requests[0]->getMethod());
+        self::assertSame('/api/v1/audio_exports', $transport->requests[0]->getUri()->getPath());
+        self::assertSame($params, json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertSame('GET', $transport->requests[1]->getMethod());
+        self::assertSame('/api/v1/audio_exports/export_task', $transport->requests[1]->getUri()->getPath());
+        self::assertSame('/api/v1/audio_exports/export_task', $transport->requests[3]->getUri()->getPath());
+    }
+
+    public function testMusicVisualizationsCreatePollAndRun(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"visual_task","status":"processing"}'),
+            new Response(200, [], '{"id":"visual_task","status":"processing"}'),
+            new Response(200, [], '{"id":"visual_task","status":"completed","video_url":"https://file.runapi.ai/visual.mp4","original_task_id":"song_task","billing":{"reservation":null,"settlement":null,"refund":null}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+        $params = [
+            'source_audio_id' => 'res_audio',
+            'author' => 'Release Day',
+            'domain_name' => 'runapi.ai',
+        ];
+
+        $created = $client->musicVisualizations->create($params);
+        $completed = $client->musicVisualizations->run($params, new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
+
+        self::assertSame('visual_task', $created->id);
+        self::assertInstanceOf(CompletedMusicVisualizationResponse::class, $completed);
+        self::assertSame('https://file.runapi.ai/visual.mp4', $completed->videoUrl);
+        self::assertSame('song_task', $completed->originalTaskId);
+
+        self::assertSame('POST', $transport->requests[0]->getMethod());
+        self::assertSame('/api/v1/music_visualizations', $transport->requests[0]->getUri()->getPath());
+        self::assertSame($params, json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertSame('GET', $transport->requests[2]->getMethod());
+        self::assertSame('/api/v1/music_visualizations/visual_task', $transport->requests[2]->getUri()->getPath());
+    }
+
+    public function testMusicFromSampleCreatePollAndRun(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"sample_task","status":"processing"}'),
+            new Response(200, [], '{"id":"sample_task","status":"processing"}'),
+            new Response(200, [], '{"id":"sample_task","status":"completed","audios":[{"id":"audio_1","audio_url":"https://file.runapi.ai/sample.mp3"}],"billing":{"reservation":null,"settlement":null,"refund":null}}'),
+        ]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+        $params = [
+            'model' => 'suno-v5.5',
+            'audio_url' => 'https://file.runapi.ai/source.mp3',
+            'prompt' => 'Add a crisp handclap sample to the chorus',
+            'start_seconds' => 5,
+            'end_seconds' => 20,
+        ];
+
+        $created = $client->musicFromSample->create($params);
+        $completed = $client->musicFromSample->run($params, new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
+
+        self::assertSame('sample_task', $created->id);
+        self::assertInstanceOf(CompletedMusicFromSampleResponse::class, $completed);
+        self::assertSame('https://file.runapi.ai/sample.mp3', $completed->audios[0]['audio_url']);
+
+        self::assertSame('POST', $transport->requests[0]->getMethod());
+        self::assertSame('/api/v1/music_from_sample', $transport->requests[0]->getUri()->getPath());
+        self::assertSame($params, json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertSame('GET', $transport->requests[2]->getMethod());
+        self::assertSame('/api/v1/music_from_sample/sample_task', $transport->requests[2]->getUri()->getPath());
+    }
+
+    public function testMusicFromSampleRejectsInvalidWindowBeforeRequest(): void
+    {
+        $transport = new QueueHttpClient([]);
+        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('end_seconds must be greater than start_seconds');
+
+        try {
+            $client->musicFromSample->create([
+                'model' => 'suno-v5.5',
+                'audio_url' => 'https://file.runapi.ai/source.mp3',
+                'start_seconds' => 20,
+                'end_seconds' => 20,
+            ]);
         } finally {
             self::assertSame([], $transport->requests);
         }

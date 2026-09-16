@@ -11,11 +11,13 @@ use RunApi\Core\Http\HttpClient;
  */
 readonly class AddInstrumental extends AudioResource
 {
+    public const ACTION = 'suno/add-instrumental';
+
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'add_instrumental', 'add-instrumental', ['suno-v4.5-plus', 'suno-v5', 'suno-v5.5']);
+        return new self($http, 'add_instrumental', self::ACTION, ['suno-v4.5-plus', 'suno-v5', 'suno-v5.5']);
     }
 }

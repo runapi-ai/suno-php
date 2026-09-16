@@ -10,9 +10,13 @@ use RunApi\Suno\Models\CheckVoiceResponse;
 
 /**
  * Checks whether a custom voice from generateVoice is ready for use. Synchronous (run() only).
+ *
+ * @deprecated Use Voices instead, whose get() reports the voice status directly.
  */
 readonly class CheckVoice extends SyncResource
 {
+    public const ACTION = 'suno/check-voice';
+
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
@@ -26,7 +30,7 @@ readonly class CheckVoice extends SyncResource
      */
     public function __construct(HttpClient $http)
     {
-        parent::__construct($http, '/api/v1/suno/check_voice', 'suno/check-voice', CheckVoiceResponse::class, ['task_id']);
+        parent::__construct($http, '/api/v1/suno/check_voice', self::ACTION, CheckVoiceResponse::class, ['task_id']);
     }
 
     /**

@@ -9,6 +9,7 @@ use RunApi\Core\ClientOptions;
 use RunApi\Suno\Resources\AddInstrumental;
 use RunApi\Suno\Resources\AddSamples;
 use RunApi\Suno\Resources\AddVocals;
+use RunApi\Suno\Resources\AudioExports;
 use RunApi\Suno\Resources\BlendLyrics;
 use RunApi\Suno\Resources\BoostStyle;
 use RunApi\Suno\Resources\CheckVoice;
@@ -23,14 +24,20 @@ use RunApi\Suno\Resources\GeneratePersona;
 use RunApi\Suno\Resources\GenerateVoice;
 use RunApi\Suno\Resources\GetTimestampedLyrics;
 use RunApi\Suno\Resources\InspireMusic;
+use RunApi\Suno\Resources\MusicFromSample;
+use RunApi\Suno\Resources\MusicVisualizations;
+use RunApi\Suno\Resources\Personas;
 use RunApi\Suno\Resources\RegenerateValidationPhrase;
 use RunApi\Suno\Resources\RemasterAudio;
 use RunApi\Suno\Resources\ReplaceSection;
 use RunApi\Suno\Resources\SeparateAudioStems;
 use RunApi\Suno\Resources\StitchAudio;
+use RunApi\Suno\Resources\StyleExpansions;
 use RunApi\Suno\Resources\TextToMusic;
 use RunApi\Suno\Resources\TextToSound;
+use RunApi\Suno\Resources\TimestampedLyrics;
 use RunApi\Suno\Resources\VisualizeMusic;
+use RunApi\Suno\Resources\Voices;
 use RunApi\Suno\Resources\VoiceToValidationPhrase;
 
 /**
@@ -132,6 +139,34 @@ final class SunoClient extends BaseClient
      * Check voice operations.
      */
     public readonly CheckVoice $checkVoice;
+    /**
+     * Creates and reads back the reusable personas a music request references by id.
+     */
+    public readonly Personas $personas;
+    /**
+     * Creates and reads back the reusable voices a music request references by id.
+     */
+    public readonly Voices $voices;
+    /**
+     * Expands a style description into genre tags.
+     */
+    public readonly StyleExpansions $styleExpansions;
+    /**
+     * Retrieves word-level timing alignment for a track.
+     */
+    public readonly TimestampedLyrics $timestampedLyrics;
+    /**
+     * Exports a track to a downloadable audio file.
+     */
+    public readonly AudioExports $audioExports;
+    /**
+     * Renders a visualization video for a track.
+     */
+    public readonly MusicVisualizations $musicVisualizations;
+    /**
+     * Creates music that samples a range of an uploaded audio file.
+     */
+    public readonly MusicFromSample $musicFromSample;
 
     /**
      * Create a Suno client with optional API key, base URL, and transport overrides.
@@ -165,5 +200,12 @@ final class SunoClient extends BaseClient
         $this->regenerateValidationPhrase = RegenerateValidationPhrase::fromHttp($this->http);
         $this->generateVoice = GenerateVoice::fromHttp($this->http);
         $this->checkVoice = CheckVoice::fromHttp($this->http);
+        $this->personas = Personas::fromHttp($this->http);
+        $this->voices = Voices::fromHttp($this->http);
+        $this->styleExpansions = StyleExpansions::fromHttp($this->http);
+        $this->timestampedLyrics = TimestampedLyrics::fromHttp($this->http);
+        $this->audioExports = AudioExports::fromHttp($this->http);
+        $this->musicVisualizations = MusicVisualizations::fromHttp($this->http);
+        $this->musicFromSample = MusicFromSample::fromHttp($this->http);
     }
 }

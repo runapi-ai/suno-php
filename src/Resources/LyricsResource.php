@@ -14,16 +14,22 @@ use RunApi\Suno\Models\LyricsTaskResponse;
 /** Shared async resource for endpoints returning lyrics entries. */
 readonly class LyricsResource extends TypedConfiguredResource
 {
-    public function __construct(HttpClient $http, string $endpointName, string $actionName)
+    /**
+     * Create a resource using the shared RunAPI HTTP transport.
+     *
+     * @param string $endpoint Endpoint below /api/v1/suno, or the absolute catalog path of a resource the whole API shares.
+     * @param string $action Full contract action key, for example suno/generate-lyrics.
+     */
+    public function __construct(HttpClient $http, string $endpoint, string $action)
     {
         parent::__construct(
             $http,
-            '/api/v1/suno/' . $endpointName,
-            'suno/' . $actionName,
+            str_starts_with($endpoint, '/') ? $endpoint : '/api/v1/suno/' . $endpoint,
+            $action,
             LyricsTaskResponse::class,
             CompletedLyricsTaskResponse::class,
             [],
-            $actionName,
+            self::resourceName($action),
             LyricsTaskResponse::class,
             CompletedLyricsTaskResponse::class,
         );
@@ -48,5 +54,12 @@ readonly class LyricsResource extends TypedConfiguredResource
         $response = parent::run($params, $options);
         /** @var CompletedLyricsTaskResponse $response */
         return $response;
+    }
+
+    private static function resourceName(string $action): string
+    {
+        $separator = strrpos($action, '/');
+
+        return $separator === false ? $action : substr($action, $separator + 1);
     }
 }

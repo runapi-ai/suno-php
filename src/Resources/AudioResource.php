@@ -19,26 +19,28 @@ readonly class AudioResource extends TypedConfiguredResource
     /**
      * Create a resource using the shared RunAPI HTTP transport.
      *
+     * @param string $endpoint Endpoint below /api/v1/suno, or the absolute catalog path of a resource the whole API shares.
+     * @param string $action Full contract action key, for example suno/convert-audio.
      * @param list<string> $models
      * @param class-string<AudioTaskResponse> $responseClass
      * @param class-string<CompletedAudioTaskResponse> $completedResponseClass
      */
     public function __construct(
         HttpClient $http,
-        string $endpointName,
-        string $actionName,
+        string $endpoint,
+        string $action,
         array $models = [],
         string $responseClass = AudioTaskResponse::class,
         string $completedResponseClass = CompletedAudioTaskResponse::class,
     ) {
         parent::__construct(
             $http,
-            '/api/v1/suno/' . $endpointName,
-            'suno/' . $actionName,
+            self::resolveEndpoint($endpoint),
+            $action,
             $responseClass,
             $completedResponseClass,
             $models,
-            $actionName,
+            self::resourceName($action),
             $responseClass,
             $completedResponseClass,
         );
@@ -76,5 +78,17 @@ readonly class AudioResource extends TypedConfiguredResource
 
         /** @var CompletedAudioTaskResponse $response */
         return $response;
+    }
+
+    private static function resolveEndpoint(string $endpoint): string
+    {
+        return str_starts_with($endpoint, '/') ? $endpoint : '/api/v1/suno/' . $endpoint;
+    }
+
+    private static function resourceName(string $action): string
+    {
+        $separator = strrpos($action, '/');
+
+        return $separator === false ? $action : substr($action, $separator + 1);
     }
 }

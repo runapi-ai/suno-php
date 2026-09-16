@@ -11,11 +11,13 @@ use RunApi\Core\Http\HttpClient;
  */
 readonly class TextToSound extends AudioResource
 {
+    public const ACTION = 'suno/text-to-sound';
+
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'text_to_sound', 'text-to-sound', ['suno-v5', 'suno-v5.5']);
+        return new self($http, 'text_to_sound', self::ACTION, ['suno-v5', 'suno-v5.5']);
     }
 }

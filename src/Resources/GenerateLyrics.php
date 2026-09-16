@@ -14,6 +14,8 @@ use RunApi\Suno\Models\CompletedLyricsTaskResponse;
  */
 readonly class GenerateLyrics extends LyricsResource
 {
+    public const ACTION = 'suno/generate-lyrics';
+
     /**
      * Submits a lyrics-generation task and returns immediately with a task id.
      *
@@ -36,6 +38,6 @@ readonly class GenerateLyrics extends LyricsResource
 
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'generate_lyrics', 'generate-lyrics');
+        return new self($http, 'generate_lyrics', self::ACTION);
     }
 }
