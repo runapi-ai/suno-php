@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.3.3](https://github.com/runapi-ai/suno-php/releases/tag/v0.3.3) - 2026-09-28
+
+### Added
+- Return usage.cost as a float USD amount on completed async Task query and webhook envelopes.
+
+### Removed
+- Remove the public Task billing object from Task envelopes.
+  Migration: Read usage.cost on completed Task envelopes. Create, processing, and failed envelopes omit usage.
+
+
 ## [v0.3.2](https://github.com/runapi-ai/suno-php/releases/tag/v0.3.2) - 2026-09-16
 
 ### Added

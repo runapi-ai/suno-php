@@ -8,7 +8,6 @@ use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use RunApi\Core\ClientOptions;
 use RunApi\Core\Errors\ValidationException;
-use RunApi\Core\Models\TaskBillingFacts;
 use RunApi\Core\Models\TaskCreateResponse;
 use RunApi\Core\RequestOptions;
 use RunApi\Core\Tests\Fixtures\QueueHttpClient;
@@ -77,15 +76,13 @@ final class SunoClientTest extends TestCase
             new Response(200, [], '{"id":"stitch","status":"processing"}'),
             new Response(200, [], '{"id":"remaster","status":"processing"}'),
             new Response(200, [], '{"id":"samples","status":"processing"}'),
-            new Response(200, [], '{"id":"inspiration","status":"processing"}'),
-        ]);
+            new Response(200, [], '{"id":"inspiration","status":"processing"}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
         $owned = ['model' => 'suno-v5', 'source_task_id' => 'source', 'audio_id' => 'audio'];
         $samples = ['model' => 'suno-v5', 'audio_url' => 'https://file.runapi.ai/source.mp3', 'prompt' => 'Add a crisp handclap sample to the chorus', 'start_seconds' => 5, 'end_seconds' => 20];
         $inspiration = [
             'model' => 'suno-v5',
-            'audio_urls' => ['https://file.runapi.ai/inspiration-one.mp3', 'https://file.runapi.ai/inspiration-two.mp3'],
-        ];
+            'audio_urls' => ['https://file.runapi.ai/inspiration-one.mp3', 'https://file.runapi.ai/inspiration-two.mp3']];
 
         $client->stitchAudio->create($owned);
         $client->remasterAudio->create($owned);
@@ -109,26 +106,22 @@ final class SunoClientTest extends TestCase
         $this->expectExceptionMessage('end_seconds must be greater than start_seconds');
         $client->addSamples->create([
             'model' => 'suno-v5', 'audio_url' => 'https://file.runapi.ai/source.mp3',
-            'start_seconds' => 20, 'end_seconds' => 20,
-        ]);
+            'start_seconds' => 20, 'end_seconds' => 20]);
     }
 
     public function testTextToMusicAndGenerateLyricsCreate(): void
     {
         $transport = new QueueHttpClient([
             new Response(200, [], '{"id":"song_task","status":"processing"}'),
-            new Response(200, [], '{"id":"lyrics_task","status":"processing"}'),
-        ]);
+            new Response(200, [], '{"id":"lyrics_task","status":"processing"}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         self::assertSame('song_task', $client->textToMusic->create([
             'model' => 'suno-v5.5',
             'prompt' => 'A chill lo-fi beat',
-            'vocal_mode' => 'auto_lyrics',
-        ])->id);
+            'vocal_mode' => 'auto_lyrics'])->id);
         self::assertSame('lyrics_task', $client->generateLyrics->create([
-            'prompt' => 'A chorus about sunrise',
-        ])->id);
+            'prompt' => 'A chorus about sunrise'])->id);
 
         self::assertSame('/api/v1/suno/text_to_music', $transport->requests[0]->getUri()->getPath());
         self::assertSame('/api/v1/suno/generate_lyrics', $transport->requests[1]->getUri()->getPath());
@@ -139,18 +132,15 @@ final class SunoClientTest extends TestCase
         $transport = new QueueHttpClient([
             new Response(200, [], '{"id":"blend_task","status":"processing"}'),
             new Response(200, [], '{"id":"blend_task_run","status":"processing"}'),
-            new Response(200, [], '{"id":"blend_task_run","status":"completed","lyrics":[{"title":"Mashup","text":"Blended lyrics"}]}'),
-        ]);
+            new Response(200, [], '{"id":"blend_task_run","status":"completed","lyrics":[{"title":"Mashup","text":"Blended lyrics"}],"usage":{"cost":0.05}}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         self::assertSame('blend_task', $client->blendLyrics->create([
             'lyrics_a' => 'First verse',
-            'lyrics_b' => 'Second verse',
-        ])->id);
+            'lyrics_b' => 'Second verse'])->id);
         $result = $client->blendLyrics->run([
             'lyrics_a' => 'First verse',
-            'lyrics_b' => 'Second verse',
-        ], new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
+            'lyrics_b' => 'Second verse'], new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
 
         self::assertInstanceOf(CompletedLyricsTaskResponse::class, $result);
         self::assertSame('Blended lyrics', $result->lyrics[0]->text);
@@ -160,8 +150,7 @@ final class SunoClientTest extends TestCase
     public function testReplaceSectionSupportsUploadedAudioSource(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"id":"section_task","status":"processing"}'),
-        ]);
+            new Response(200, [], '{"id":"section_task","status":"processing"}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         self::assertSame('section_task', $client->replaceSection->create([
@@ -172,8 +161,7 @@ final class SunoClientTest extends TestCase
             'tags' => 'rock',
             'title' => 'Song',
             'infill_start_time' => 10.0,
-            'infill_end_time' => 20.0,
-        ])->id);
+            'infill_end_time' => 20.0])->id);
 
         $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
         self::assertSame('/api/v1/suno/replace_section', $transport->requests[0]->getUri()->getPath());
@@ -186,16 +174,14 @@ final class SunoClientTest extends TestCase
     public function testSeparateAudioStemsAdvancedUsesCanonicalStemName(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"id":"stems_task","status":"processing"}'),
-        ]);
+            new Response(200, [], '{"id":"stems_task","status":"processing"}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         self::assertSame('stems_task', $client->separateAudioStems->create([
             'task_id' => 'task_source',
             'audio_id' => 'audio_source',
             'type' => 'split_stem_advanced',
-            'stem_name' => 'Bass',
-        ])->id);
+            'stem_name' => 'Bass'])->id);
 
         $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
         self::assertSame('split_stem_advanced', $body['type']);
@@ -215,8 +201,7 @@ final class SunoClientTest extends TestCase
             $client->separateAudioStems->create([
                 'task_id' => 'task_source',
                 'audio_id' => 'audio_source',
-                'type' => 'split_stem_advanced',
-            ]);
+                'type' => 'split_stem_advanced']);
         } finally {
             self::assertSame([], $transport->requests);
         }
@@ -225,8 +210,7 @@ final class SunoClientTest extends TestCase
     public function testSeparateAudioStemsAdvancedDecodesTypedPair(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"id":"stems_task","status":"completed","separated_audios":{"pairs":[{"stem_name":"Bass","extracted_audio":{"id":"audio_bass","duration_seconds":116.28,"audio_url":"https://file.runapi.ai/bass.mp3"},"remaining_audio":{"id":"audio_without_bass","duration_seconds":116.28,"audio_url":"https://file.runapi.ai/without-bass.mp3"}}]}}'),
-        ]);
+            new Response(200, [], '{"id":"stems_task","status":"completed", "usage": {"cost": 0.05},"separated_audios":{"pairs":[{"stem_name":"Bass","extracted_audio":{"id":"audio_bass","duration_seconds":116.28,"audio_url":"https://file.runapi.ai/bass.mp3"},"remaining_audio":{"id":"audio_without_bass","duration_seconds":116.28,"audio_url":"https://file.runapi.ai/without-bass.mp3"}}]},"usage":{"cost":0.05}}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $response = $client->separateAudioStems->get('stems_task');
@@ -241,8 +225,7 @@ final class SunoClientTest extends TestCase
     public function testSeparateAudioStemsDecodesLegacyUrls(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"id":"stems_task","status":"completed","separated_audios":{"vocal_url":"https://file.runapi.ai/vocal.mp3","instrumental_url":"https://file.runapi.ai/instrumental.mp3"}}'),
-        ]);
+            new Response(200, [], '{"id":"stems_task","status":"completed","separated_audios":{"vocal_url":"https://file.runapi.ai/vocal.mp3","instrumental_url":"https://file.runapi.ai/instrumental.mp3"},"usage":{"cost":0.05}}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $response = $client->separateAudioStems->get('stems_task');
@@ -272,8 +255,7 @@ final class SunoClientTest extends TestCase
                 'tags' => 'rock',
                 'title' => 'Song',
                 'infill_start_time' => 10.0,
-                'infill_end_time' => 20.0,
-            ]);
+                'infill_end_time' => 20.0]);
         } finally {
             self::assertSame([], $transport->requests);
         }
@@ -299,8 +281,7 @@ final class SunoClientTest extends TestCase
                 'tags' => 'rock',
                 'title' => 'Song',
                 'infill_start_time' => $startTime,
-                'infill_end_time' => $endTime,
-            ]);
+                'infill_end_time' => $endTime]);
         } finally {
             self::assertSame([], $transport->requests);
         }
@@ -328,8 +309,7 @@ final class SunoClientTest extends TestCase
             'tags' => 'rock',
             'title' => 'Song',
             'infill_start_time' => 10.0,
-            'infill_end_time' => 71.0,
-        ]);
+            'infill_end_time' => 71.0]);
 
         self::assertCount(1, $transport->requests);
     }
@@ -347,8 +327,7 @@ final class SunoClientTest extends TestCase
             'tags' => 'rock',
             'title' => 'Song',
             'infill_start_time' => 6.016,
-            'infill_end_time' => 16.016,
-        ]);
+            'infill_end_time' => 16.016]);
 
         self::assertCount(1, $transport->requests);
     }
@@ -367,23 +346,20 @@ final class SunoClientTest extends TestCase
             'tags' => 'rock',
             'title' => 'Song',
             'infill_start_time' => 0.0,
-            'infill_end_time' => INF,
-        ]);
+            'infill_end_time' => INF]);
     }
 
     public function testTextToMusicRunReturnsTypedCompletedResponse(): void
     {
         $transport = new QueueHttpClient([
             new Response(200, [], '{"id":"song_task","status":"processing"}'),
-            new Response(200, [], '{"id":"song_task","status":"completed"}'),
-        ]);
+            new Response(200, [], '{"id":"song_task","status":"completed","usage":{"cost":0.05}}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $result = $client->textToMusic->run([
             'model' => 'suno-v5.5',
             'prompt' => 'A chill lo-fi beat',
-            'vocal_mode' => 'auto_lyrics',
-        ]);
+            'vocal_mode' => 'auto_lyrics']);
 
         self::assertInstanceOf(CompletedAudioTaskResponse::class, $result);
         self::assertSame('completed', $result->status);
@@ -395,8 +371,7 @@ final class SunoClientTest extends TestCase
             new Response(200, [], '{"is_available":true,"extra_field":"kept"}'),
             new Response(200, [], '{"persona":{"id":"persona_1","name":"Narrator","description":"warm"},"extra_field":"kept"}'),
             new Response(200, [], '{"aligned_words":[{"word":"hello","success":true,"start_time":0,"end_time":0.5,"palign":0.98}],"waveform_data":[0,0.5,1],"hoot_cer":0.1,"is_streamed":false,"extra_field":"kept"}'),
-            new Response(200, [], '{"style":"dream pop, soft drums","extra_field":"kept"}'),
-        ]);
+            new Response(200, [], '{"style":"dream pop, soft drums","extra_field":"kept"}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $check = $client->checkVoice->run(['task_id' => 'voice_task']);
@@ -404,14 +379,12 @@ final class SunoClientTest extends TestCase
             'task_id' => 'song_task',
             'audio_id' => 'audio_1',
             'name' => 'Narrator',
-            'description' => 'warm',
-        ]);
+            'description' => 'warm']);
         $lyrics = $client->getTimestampedLyrics->run(['task_id' => 'song_task', 'audio_id' => 'audio_1']);
         $style = $client->boostStyle->run([
             'description' => 'dreamy pop',
             'name' => 'unused',
-            'callback_url' => '',
-        ]);
+            'callback_url' => '']);
 
         self::assertInstanceOf(CheckVoiceResponse::class, $check);
         self::assertTrue($check->isAvailable);
@@ -455,17 +428,15 @@ final class SunoClientTest extends TestCase
     public function testPersonasCreateAndReadRunAPIResource(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"persona":{"id":"res_persona","name":"Narrator","description":"warm"},"billing":{"reservation":null,"settlement":null,"refund":null}}'),
-            new Response(200, [], '{"persona":{"id":"res_persona","name":"Narrator","description":"warm"},"status":"available","billing":{}}'),
-        ]);
+            new Response(200, [], '{"persona":{"id":"res_persona","name":"Narrator","description":"warm"}}'),
+            new Response(200, [], '{"persona":{"id":"res_persona","name":"Narrator","description":"warm"},"status":"available"}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $created = $client->personas->run([
             'source_task_id' => 'song_task',
             'source_audio_id' => 'audio_1',
             'name' => 'Narrator',
-            'description' => 'warm',
-        ]);
+            'description' => 'warm']);
         $resource = $client->personas->get('res_persona');
 
         self::assertInstanceOf(PersonaCreationResponse::class, $created);
@@ -485,8 +456,7 @@ final class SunoClientTest extends TestCase
             'source_task_id' => 'song_task',
             'source_audio_id' => 'audio_1',
             'name' => 'Narrator',
-            'description' => 'warm',
-        ], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+            'description' => 'warm'], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
         self::assertSame('GET', $transport->requests[1]->getMethod());
         self::assertSame('/api/v1/personas/res_persona', $transport->requests[1]->getUri()->getPath());
     }
@@ -495,16 +465,14 @@ final class SunoClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(202, ['Location' => '/api/v1/tasks/local_persona'], '{"id":"local_persona","status":"pending"}'),
-            new Response(200, [], '{"id":"local_persona","status":"completed","response":{"status":200,"content_type":"application/json","body":{"persona":{"id":"res_local","name":"Local"}}}}'),
-        ]);
+            new Response(200, [], '{"id":"local_persona","status":"completed","response":{"status":200,"content_type":"application/json","body":{"persona":{"id":"res_local","name":"Local"}}},"usage":{"cost":0.05}}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $created = $client->personas->run([
             'source_task_id' => 'song_task',
             'source_audio_id' => 'audio_1',
             'name' => 'Local',
-            'description' => 'queued for local execution',
-        ], new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
+            'description' => 'queued for local execution'], new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
 
         self::assertInstanceOf(PersonaCreationResponse::class, $created);
         self::assertSame('res_local', $created->persona?->id);
@@ -514,15 +482,13 @@ final class SunoClientTest extends TestCase
     public function testVoicesCreateAndReadRunAPIResource(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"voice":{"id":"res_voice","name":"Studio Voice"},"status":"completed","billing":{"reservation":null,"settlement":null,"refund":null}}'),
-            new Response(200, [], '{"voice":{"id":"res_voice","name":"Studio Voice"},"status":"available","billing":{}}'),
-        ]);
+            new Response(200, [], '{"voice":{"id":"res_voice","name":"Studio Voice"},"status":"completed", "usage": {"cost": 0.05}}'),
+            new Response(200, [], '{"voice":{"id":"res_voice","name":"Studio Voice"},"status":"available"}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $created = $client->voices->run([
             'source_audio_url' => 'https://file.runapi.ai/voice.mp3',
-            'name' => 'Studio Voice',
-        ]);
+            'name' => 'Studio Voice']);
         $resource = $client->voices->get('res_voice');
 
         self::assertInstanceOf(VoiceCreationResponse::class, $created);
@@ -538,8 +504,7 @@ final class SunoClientTest extends TestCase
         self::assertSame('/api/v1/voices', $transport->requests[0]->getUri()->getPath());
         self::assertSame([
             'source_audio_url' => 'https://file.runapi.ai/voice.mp3',
-            'name' => 'Studio Voice',
-        ], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+            'name' => 'Studio Voice'], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
         self::assertSame('GET', $transport->requests[1]->getMethod());
         self::assertSame('/api/v1/voices/res_voice', $transport->requests[1]->getUri()->getPath());
     }
@@ -547,8 +512,7 @@ final class SunoClientTest extends TestCase
     public function testStyleExpansionsExpandADescription(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"style":"dream pop, soft drums","billing":{"reservation":null,"settlement":null,"refund":null}}'),
-        ]);
+            new Response(200, [], '{"style":"dream pop, soft drums"}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $style = $client->styleExpansions->run(['description' => 'dreamy pop']);
@@ -564,14 +528,12 @@ final class SunoClientTest extends TestCase
     public function testTimestampedLyricsAlignAnAudioResource(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"aligned_words":[{"word":"hello","success":true,"start_time":0,"end_time":0.5,"palign":0.98}],"waveform_data":[0,0.5,1],"hoot_cer":0.02,"is_streamed":false,"billing":{"reservation":null,"settlement":null,"refund":null}}'),
-        ]);
+            new Response(200, [], '{"aligned_words":[{"word":"hello","success":true,"start_time":0,"end_time":0.5,"palign":0.98}],"waveform_data":[0,0.5,1],"hoot_cer":0.02,"is_streamed":false}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $lyrics = $client->timestampedLyrics->run([
             'source_audio_id' => 'res_audio',
-            'source_task_id' => 'song_task',
-        ]);
+            'source_task_id' => 'song_task']);
 
         self::assertInstanceOf(GetTimestampedLyricsResponse::class, $lyrics);
         self::assertSame('hello', $lyrics->alignedWords[0]->word);
@@ -583,18 +545,16 @@ final class SunoClientTest extends TestCase
         self::assertSame('/api/v1/timestamped_lyrics', $transport->requests[0]->getUri()->getPath());
         self::assertSame([
             'source_audio_id' => 'res_audio',
-            'source_task_id' => 'song_task',
-        ], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
+            'source_task_id' => 'song_task'], json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
     }
 
     public function testAudioExportsCreatePollAndRun(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"id":"export_task","status":"processing","billing":{"reservation":null,"settlement":null,"refund":null}}'),
             new Response(200, [], '{"id":"export_task","status":"processing"}'),
             new Response(200, [], '{"id":"export_task","status":"processing"}'),
-            new Response(200, [], '{"id":"export_task","status":"completed","wav_url":"https://file.runapi.ai/track.wav","original_task_id":"song_task","billing":{"reservation":null,"settlement":null,"refund":null}}'),
-        ]);
+            new Response(200, [], '{"id":"export_task","status":"processing"}'),
+            new Response(200, [], '{"id":"export_task","status":"completed","wav_url":"https://file.runapi.ai/track.wav","original_task_id":"song_task","usage":{"cost":0.05}}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
         $params = ['source_audio_id' => 'res_audio'];
 
@@ -610,7 +570,7 @@ final class SunoClientTest extends TestCase
         self::assertInstanceOf(CompletedAudioExportResponse::class, $completed);
         self::assertSame('https://file.runapi.ai/track.wav', $completed->wavUrl);
         self::assertSame('song_task', $completed->originalTaskId);
-        self::assertInstanceOf(TaskBillingFacts::class, $completed->billing);
+        self::assertSame(0.05, $completed->usage?->cost);
 
         self::assertSame('POST', $transport->requests[0]->getMethod());
         self::assertSame('/api/v1/audio_exports', $transport->requests[0]->getUri()->getPath());
@@ -625,14 +585,12 @@ final class SunoClientTest extends TestCase
         $transport = new QueueHttpClient([
             new Response(200, [], '{"id":"visual_task","status":"processing"}'),
             new Response(200, [], '{"id":"visual_task","status":"processing"}'),
-            new Response(200, [], '{"id":"visual_task","status":"completed","video_url":"https://file.runapi.ai/visual.mp4","original_task_id":"song_task","billing":{"reservation":null,"settlement":null,"refund":null}}'),
-        ]);
+            new Response(200, [], '{"id":"visual_task","status":"completed","video_url":"https://file.runapi.ai/visual.mp4","original_task_id":"song_task","usage":{"cost":0.05}}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
         $params = [
             'source_audio_id' => 'res_audio',
             'author' => 'Release Day',
-            'domain_name' => 'runapi.ai',
-        ];
+            'domain_name' => 'runapi.ai'];
 
         $created = $client->musicVisualizations->create($params);
         $completed = $client->musicVisualizations->run($params, new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
@@ -654,16 +612,14 @@ final class SunoClientTest extends TestCase
         $transport = new QueueHttpClient([
             new Response(200, [], '{"id":"sample_task","status":"processing"}'),
             new Response(200, [], '{"id":"sample_task","status":"processing"}'),
-            new Response(200, [], '{"id":"sample_task","status":"completed","audios":[{"id":"audio_1","audio_url":"https://file.runapi.ai/sample.mp3"}],"billing":{"reservation":null,"settlement":null,"refund":null}}'),
-        ]);
+            new Response(200, [], '{"id":"sample_task","status":"completed","audios":[{"id":"audio_1","audio_url":"https://file.runapi.ai/sample.mp3"}],"usage":{"cost":0.05}}')]);
         $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
         $params = [
             'model' => 'suno-v5.5',
             'audio_url' => 'https://file.runapi.ai/source.mp3',
             'prompt' => 'Add a crisp handclap sample to the chorus',
             'start_seconds' => 5,
-            'end_seconds' => 20,
-        ];
+            'end_seconds' => 20];
 
         $created = $client->musicFromSample->create($params);
         $completed = $client->musicFromSample->run($params, new RequestOptions(pollIntervalSeconds: 0.0, maxWaitSeconds: 1.0));
@@ -692,8 +648,7 @@ final class SunoClientTest extends TestCase
                 'model' => 'suno-v5.5',
                 'audio_url' => 'https://file.runapi.ai/source.mp3',
                 'start_seconds' => 20,
-                'end_seconds' => 20,
-            ]);
+                'end_seconds' => 20]);
         } finally {
             self::assertSame([], $transport->requests);
         }

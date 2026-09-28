@@ -21,13 +21,11 @@ readonly class PersonaResourceResponse extends BaseModel
     public function __construct(
         public PersonaResource $persona,
         public string $status,
-        public ResourceBilling $billing,
         array $raw = [],
     ) {
         parent::__construct($raw === [] ? [
             'persona' => $persona->toArray(),
             'status' => $status,
-            'billing' => $billing->toArray(),
         ] : $raw);
     }
 
@@ -41,7 +39,6 @@ readonly class PersonaResourceResponse extends BaseModel
         return new self(
             persona: PersonaResource::fromArray(Payload::array($raw, 'persona')),
             status: self::status($raw),
-            billing: ResourceBilling::fromArray(Payload::array($raw, 'billing')),
             raw: $raw,
         );
     }

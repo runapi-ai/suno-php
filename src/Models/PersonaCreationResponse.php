@@ -6,7 +6,6 @@ namespace RunApi\Suno\Models;
 
 use RunApi\Core\Errors\ValidationException;
 use RunApi\Core\Models\BaseModel;
-use RunApi\Core\Models\TaskBillingFacts;
 use RunApi\Core\Support\Payload;
 
 /**
@@ -14,14 +13,10 @@ use RunApi\Core\Support\Payload;
  *
  * A request the service completed carries persona. A request it accepted for
  * local execution carries the task acceptance (id and status) instead, and the
- * result is read from the task status endpoint. billing carries the task charge
- * facts (reservation, settlement, refund), not the persona's resource
- * provenance, which the persona resource endpoint reports.
+ * result is read from the task status endpoint.
  */
 readonly class PersonaCreationResponse extends BaseModel
 {
-    public ?TaskBillingFacts $billing;
-
     /**
      * Create a persona creation response value object.
      *
@@ -33,16 +28,12 @@ readonly class PersonaCreationResponse extends BaseModel
         public ?PersonaResource $persona = null,
         public ?string $error = null,
         array $raw = [],
-        ?TaskBillingFacts $billing = null,
     ) {
-        $this->billing = $billing ?? self::billing($raw);
         parent::__construct($raw === [] ? [
             'id' => $id,
             'status' => $status,
             'persona' => $persona?->toArray(),
-            'error' => $error,
-            'billing' => $this->billing?->toArray(),
-        ] : $raw);
+            'error' => $error] : $raw);
     }
 
     /**
@@ -74,11 +65,5 @@ readonly class PersonaCreationResponse extends BaseModel
 
         /** @var array<string, mixed> $value */
         return PersonaResource::fromArray($value);
-    }
-
-    /** @param array<string, mixed> $raw */
-    private static function billing(array $raw): ?TaskBillingFacts
-    {
-        return isset($raw['billing']) && is_array($raw['billing']) ? TaskBillingFacts::fromArray($raw['billing']) : null;
     }
 }

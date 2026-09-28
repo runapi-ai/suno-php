@@ -6,7 +6,6 @@ namespace RunApi\Suno\Models;
 
 use RunApi\Core\Errors\ValidationException;
 use RunApi\Core\Models\BaseModel;
-use RunApi\Core\Models\TaskBillingFacts;
 use RunApi\Core\Support\Payload;
 
 /**
@@ -14,14 +13,10 @@ use RunApi\Core\Support\Payload;
  *
  * A request the service completed carries voice. A request it accepted for local
  * execution carries the task acceptance (id and status) instead, and the result
- * is read from the task status endpoint. billing carries the task charge facts
- * (reservation, settlement, refund), not the voice's resource provenance, which
- * the voice resource endpoint reports.
+ * is read from the task status endpoint.
  */
 readonly class VoiceCreationResponse extends BaseModel
 {
-    public ?TaskBillingFacts $billing;
-
     /**
      * Create a voice creation response value object.
      *
@@ -33,16 +28,12 @@ readonly class VoiceCreationResponse extends BaseModel
         public ?VoiceResource $voice = null,
         public ?string $error = null,
         array $raw = [],
-        ?TaskBillingFacts $billing = null,
     ) {
-        $this->billing = $billing ?? self::billing($raw);
         parent::__construct($raw === [] ? [
             'id' => $id,
             'status' => $status,
             'voice' => $voice?->toArray(),
-            'error' => $error,
-            'billing' => $this->billing?->toArray(),
-        ] : $raw);
+            'error' => $error] : $raw);
     }
 
     /**
@@ -74,11 +65,5 @@ readonly class VoiceCreationResponse extends BaseModel
 
         /** @var array<string, mixed> $value */
         return VoiceResource::fromArray($value);
-    }
-
-    /** @param array<string, mixed> $raw */
-    private static function billing(array $raw): ?TaskBillingFacts
-    {
-        return isset($raw['billing']) && is_array($raw['billing']) ? TaskBillingFacts::fromArray($raw['billing']) : null;
     }
 }

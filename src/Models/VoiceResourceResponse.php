@@ -21,13 +21,11 @@ readonly class VoiceResourceResponse extends BaseModel
     public function __construct(
         public VoiceResource $voice,
         public string $status,
-        public ResourceBilling $billing,
         array $raw = [],
     ) {
         parent::__construct($raw === [] ? [
             'voice' => $voice->toArray(),
             'status' => $status,
-            'billing' => $billing->toArray(),
         ] : $raw);
     }
 
@@ -41,7 +39,6 @@ readonly class VoiceResourceResponse extends BaseModel
         return new self(
             voice: VoiceResource::fromArray(Payload::array($raw, 'voice')),
             status: self::status($raw),
-            billing: ResourceBilling::fromArray(Payload::array($raw, 'billing')),
             raw: $raw,
         );
     }
