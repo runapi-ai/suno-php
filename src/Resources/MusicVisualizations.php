@@ -14,8 +14,6 @@ use RunApi\Suno\Models\MusicVisualizationResponse;
  */
 readonly class MusicVisualizations extends AudioResource
 {
-    public const ACTION = 'suno/music-visualizations';
-
     private const ENDPOINT = '/api/v1/music_visualizations';
 
     /**
@@ -26,8 +24,6 @@ readonly class MusicVisualizations extends AudioResource
         return new self(
             $http,
             self::ENDPOINT,
-            self::ACTION,
-            [],
             MusicVisualizationResponse::class,
             CompletedMusicVisualizationResponse::class,
         );

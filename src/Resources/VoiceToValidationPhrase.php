@@ -11,13 +11,11 @@ use RunApi\Core\Http\HttpClient;
  */
 readonly class VoiceToValidationPhrase extends AudioResource
 {
-    public const ACTION = 'suno/voice-to-validation-phrase';
-
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'voice_to_validation_phrase', self::ACTION);
+        return new self($http, 'voice_to_validation_phrase');
     }
 }

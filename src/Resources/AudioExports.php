@@ -14,8 +14,6 @@ use RunApi\Suno\Models\CompletedAudioExportResponse;
  */
 readonly class AudioExports extends AudioResource
 {
-    public const ACTION = 'suno/audio-exports';
-
     private const ENDPOINT = '/api/v1/audio_exports';
 
     /**
@@ -26,8 +24,6 @@ readonly class AudioExports extends AudioResource
         return new self(
             $http,
             self::ENDPOINT,
-            self::ACTION,
-            [],
             AudioExportResponse::class,
             CompletedAudioExportResponse::class,
         );

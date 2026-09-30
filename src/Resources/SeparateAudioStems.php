@@ -14,8 +14,6 @@ use RunApi\Suno\Models\SeparateAudioStemsResponse;
  */
 readonly class SeparateAudioStems extends AudioResource
 {
-    public const ACTION = 'suno/separate-audio-stems';
-
     /** Fetch the current status of a stem-separation task. */
     public function get(string $id, ?RequestOptions $options = null): SeparateAudioStemsResponse
     {
@@ -42,7 +40,6 @@ readonly class SeparateAudioStems extends AudioResource
         return new self(
             $http,
             'separate_audio_stems',
-            self::ACTION,
             responseClass: SeparateAudioStemsResponse::class,
             completedResponseClass: CompletedSeparateAudioStemsResponse::class,
         );

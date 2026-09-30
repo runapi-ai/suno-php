@@ -15,8 +15,6 @@ use RunApi\Suno\Models\GeneratePersonaResponse;
  */
 readonly class GeneratePersona extends SyncResource
 {
-    public const ACTION = 'suno/generate-persona';
-
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
@@ -33,9 +31,7 @@ readonly class GeneratePersona extends SyncResource
         parent::__construct(
             $http,
             '/api/v1/suno/generate_persona',
-            self::ACTION,
             GeneratePersonaResponse::class,
-            ['task_id', 'audio_id', 'name', 'description'],
         );
     }
 

@@ -15,8 +15,6 @@ use RunApi\Suno\Models\GetTimestampedLyricsResponse;
  */
 readonly class GetTimestampedLyrics extends SyncResource
 {
-    public const ACTION = 'suno/get-timestamped-lyrics';
-
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
@@ -33,9 +31,7 @@ readonly class GetTimestampedLyrics extends SyncResource
         parent::__construct(
             $http,
             '/api/v1/suno/get_timestamped_lyrics',
-            self::ACTION,
             GetTimestampedLyricsResponse::class,
-            ['task_id', 'audio_id'],
         );
     }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RunApi\Suno\Resources;
 
-use RunApi\Core\Errors\ValidationException;
 use RunApi\Core\Http\HttpClient;
 use RunApi\Core\RequestOptions;
 use RunApi\Suno\Models\CompletedMusicFromSampleResponse;
@@ -15,8 +14,6 @@ use RunApi\Suno\Models\MusicFromSampleResponse;
  */
 readonly class MusicFromSample extends AudioResource
 {
-    public const ACTION = 'suno/music-from-sample';
-
     private const ENDPOINT = '/api/v1/music_from_sample';
 
     /**
@@ -27,8 +24,6 @@ readonly class MusicFromSample extends AudioResource
         return new self(
             $http,
             self::ENDPOINT,
-            self::ACTION,
-            [],
             MusicFromSampleResponse::class,
             CompletedMusicFromSampleResponse::class,
         );
@@ -56,15 +51,5 @@ readonly class MusicFromSample extends AudioResource
 
         /** @var CompletedMusicFromSampleResponse $response */
         return $response;
-    }
-
-    protected function validate(array $params, string $model): void
-    {
-        parent::validate($params, $model);
-        $start = $params['start_seconds'] ?? null;
-        $end = $params['end_seconds'] ?? null;
-        if ((is_int($start) || is_float($start)) && (is_int($end) || is_float($end)) && $end <= $start) {
-            throw new ValidationException('end_seconds must be greater than start_seconds');
-        }
     }
 }

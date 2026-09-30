@@ -18,8 +18,6 @@ use RunApi\Suno\Models\VoiceResourceResponse;
  */
 readonly class Voices extends SyncResource
 {
-    public const ACTION = 'suno/voices';
-
     private const ENDPOINT = '/api/v1/voices';
 
     /**
@@ -35,7 +33,7 @@ readonly class Voices extends SyncResource
      */
     public function __construct(HttpClient $http)
     {
-        parent::__construct($http, self::ENDPOINT, self::ACTION, VoiceCreationResponse::class, ['source_audio_url']);
+        parent::__construct($http, self::ENDPOINT, VoiceCreationResponse::class);
     }
 
     /**

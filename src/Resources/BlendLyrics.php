@@ -12,8 +12,6 @@ use RunApi\Suno\Models\CompletedLyricsTaskResponse;
 /** Blends two caller-authored lyrics texts. */
 readonly class BlendLyrics extends LyricsResource
 {
-    public const ACTION = 'suno/blend-lyrics';
-
     /** @param array{lyrics_a: string, lyrics_b: string, callback_url?: string} $params */
     public function create(array $params, ?RequestOptions $options = null): TaskCreateResponse
     {
@@ -28,6 +26,6 @@ readonly class BlendLyrics extends LyricsResource
 
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'blend_lyrics', self::ACTION);
+        return new self($http, 'blend_lyrics');
     }
 }

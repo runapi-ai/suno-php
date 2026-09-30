@@ -15,8 +15,6 @@ use RunApi\Suno\Models\BoostStyleResponse;
  */
 readonly class BoostStyle extends SyncResource
 {
-    public const ACTION = 'suno/boost-style';
-
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
@@ -30,7 +28,7 @@ readonly class BoostStyle extends SyncResource
      */
     public function __construct(HttpClient $http)
     {
-        parent::__construct($http, '/api/v1/suno/boost_style', self::ACTION, BoostStyleResponse::class, ['description']);
+        parent::__construct($http, '/api/v1/suno/boost_style', BoostStyleResponse::class);
     }
 
     /**

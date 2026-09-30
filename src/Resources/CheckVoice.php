@@ -15,8 +15,6 @@ use RunApi\Suno\Models\CheckVoiceResponse;
  */
 readonly class CheckVoice extends SyncResource
 {
-    public const ACTION = 'suno/check-voice';
-
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
@@ -30,7 +28,7 @@ readonly class CheckVoice extends SyncResource
      */
     public function __construct(HttpClient $http)
     {
-        parent::__construct($http, '/api/v1/suno/check_voice', self::ACTION, CheckVoiceResponse::class, ['task_id']);
+        parent::__construct($http, '/api/v1/suno/check_voice', CheckVoiceResponse::class);
     }
 
     /**

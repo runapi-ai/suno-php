@@ -18,18 +18,15 @@ readonly class LyricsResource extends TypedConfiguredResource
      * Create a resource using the shared RunAPI HTTP transport.
      *
      * @param string $endpoint Endpoint below /api/v1/suno, or the absolute catalog path of a resource the whole API shares.
-     * @param string $action Full contract action key, for example suno/generate-lyrics.
      */
-    public function __construct(HttpClient $http, string $endpoint, string $action)
+    public function __construct(HttpClient $http, string $endpoint)
     {
         parent::__construct(
             $http,
             str_starts_with($endpoint, '/') ? $endpoint : '/api/v1/suno/' . $endpoint,
-            $action,
             LyricsTaskResponse::class,
             CompletedLyricsTaskResponse::class,
-            [],
-            self::resourceName($action),
+            self::resourceName($endpoint),
             LyricsTaskResponse::class,
             CompletedLyricsTaskResponse::class,
         );
@@ -55,11 +52,12 @@ readonly class LyricsResource extends TypedConfiguredResource
         /** @var CompletedLyricsTaskResponse $response */
         return $response;
     }
-
-    private static function resourceName(string $action): string
+    private static function resourceName(string $endpoint): string
     {
-        $separator = strrpos($action, '/');
+        $endpoint = trim($endpoint, '/');
+        $separator = strrpos($endpoint, '/');
 
-        return $separator === false ? $action : substr($action, $separator + 1);
+        return $separator === false ? $endpoint : substr($endpoint, $separator + 1);
     }
+
 }

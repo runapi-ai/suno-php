@@ -11,13 +11,11 @@ use RunApi\Core\Http\HttpClient;
  */
 readonly class CreateMashup extends AudioResource
 {
-    public const ACTION = 'suno/create-mashup';
-
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'create_mashup', self::ACTION, ['suno-v4', 'suno-v4.5', 'suno-v4.5-all', 'suno-v4.5-plus', 'suno-v5', 'suno-v5.5']);
+        return new self($http, 'create_mashup');
     }
 }

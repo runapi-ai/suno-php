@@ -13,8 +13,6 @@ use RunApi\Suno\Models\BoostStyleResponse;
  */
 readonly class StyleExpansions extends SyncResource
 {
-    public const ACTION = 'suno/style-expansions';
-
     private const ENDPOINT = '/api/v1/style_expansions';
 
     /**
@@ -30,7 +28,7 @@ readonly class StyleExpansions extends SyncResource
      */
     public function __construct(HttpClient $http)
     {
-        parent::__construct($http, self::ENDPOINT, self::ACTION, BoostStyleResponse::class, ['description']);
+        parent::__construct($http, self::ENDPOINT, BoostStyleResponse::class);
     }
 
     /**

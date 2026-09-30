@@ -11,13 +11,11 @@ use RunApi\Core\Http\HttpClient;
  */
 readonly class GenerateArtwork extends AudioResource
 {
-    public const ACTION = 'suno/generate-artwork';
-
     /**
      * Create the resource using the shared RunAPI HTTP transport.
      */
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'generate_artwork', self::ACTION);
+        return new self($http, 'generate_artwork');
     }
 }

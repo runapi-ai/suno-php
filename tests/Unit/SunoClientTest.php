@@ -7,7 +7,6 @@ namespace RunApi\Suno\Tests\Unit;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use RunApi\Core\ClientOptions;
-use RunApi\Core\Errors\ValidationException;
 use RunApi\Core\Models\TaskCreateResponse;
 use RunApi\Core\RequestOptions;
 use RunApi\Core\Tests\Fixtures\QueueHttpClient;
@@ -40,7 +39,6 @@ use RunApi\Suno\Resources\MusicFromSample;
 use RunApi\Suno\Resources\MusicVisualizations;
 use RunApi\Suno\Resources\Personas;
 use RunApi\Suno\Resources\StyleExpansions;
-use RunApi\Suno\Resources\SyncResource;
 use RunApi\Suno\Resources\TextToMusic;
 use RunApi\Suno\Resources\TimestampedLyrics;
 use RunApi\Suno\Resources\Voices;
@@ -97,16 +95,6 @@ final class SunoClientTest extends TestCase
         $inspirationBody = json_decode((string) $transport->requests[3]->getBody(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame($inspiration, $inspirationBody);
         self::assertArrayNotHasKey('audio_id', $inspirationBody);
-    }
-
-    public function testAddSamplesRejectsInvalidWindow(): void
-    {
-        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: new QueueHttpClient([]), maxRetries: 0));
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('end_seconds must be greater than start_seconds');
-        $client->addSamples->create([
-            'model' => 'suno-v5', 'audio_url' => 'https://file.runapi.ai/source.mp3',
-            'start_seconds' => 20, 'end_seconds' => 20]);
     }
 
     public function testTextToMusicAndGenerateLyricsCreate(): void
@@ -189,24 +177,6 @@ final class SunoClientTest extends TestCase
         self::assertArrayNotHasKey('stemName', $body);
     }
 
-    public function testSeparateAudioStemsAdvancedRequiresStemNameBeforeRequest(): void
-    {
-        $transport = new QueueHttpClient([]);
-        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('stem_name is required when type is split_stem_advanced');
-
-        try {
-            $client->separateAudioStems->create([
-                'task_id' => 'task_source',
-                'audio_id' => 'audio_source',
-                'type' => 'split_stem_advanced']);
-        } finally {
-            self::assertSame([], $transport->requests);
-        }
-    }
-
     public function testSeparateAudioStemsAdvancedDecodesTypedPair(): void
     {
         $transport = new QueueHttpClient([
@@ -234,66 +204,6 @@ final class SunoClientTest extends TestCase
         self::assertSame('https://file.runapi.ai/vocal.mp3', $response->separatedAudios->vocalUrl);
         self::assertSame('https://file.runapi.ai/instrumental.mp3', $response->separatedAudios->instrumentalUrl);
         self::assertSame([], $response->separatedAudios->pairs);
-    }
-
-    public function testReplaceSectionRejectsMixedSourcesBeforeRequest(): void
-    {
-        $transport = new QueueHttpClient([]);
-        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('task_id/audio_id cannot be combined with upload_url/model');
-
-        try {
-            $client->replaceSection->create([
-                'task_id' => 'task_1',
-                'audio_id' => 'audio_1',
-                'upload_url' => 'https://cdn.runapi.ai/public/samples/music.mp3',
-                'model' => 'suno-v5.5',
-                'lyrics' => 'solo',
-                'full_lyrics' => '[Verse] solo',
-                'tags' => 'rock',
-                'title' => 'Song',
-                'infill_start_time' => 10.0,
-                'infill_end_time' => 20.0]);
-        } finally {
-            self::assertSame([], $transport->requests);
-        }
-    }
-
-    /**
-     * @dataProvider invalidReplaceSectionTimeWindows
-     */
-    public function testReplaceSectionRejectsInvalidTimeWindow(float $startTime, float $endTime, string $message): void
-    {
-        $transport = new QueueHttpClient([]);
-        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage($message);
-
-        try {
-            $client->replaceSection->create([
-                'task_id' => 'task_1',
-                'audio_id' => 'audio_1',
-                'lyrics' => 'solo',
-                'full_lyrics' => '[Verse] solo',
-                'tags' => 'rock',
-                'title' => 'Song',
-                'infill_start_time' => $startTime,
-                'infill_end_time' => $endTime]);
-        } finally {
-            self::assertSame([], $transport->requests);
-        }
-    }
-
-    /**
-     * @return iterable<string, array{float, float, string}>
-     */
-    public static function invalidReplaceSectionTimeWindows(): iterable
-    {
-        yield 'end before start' => [10.0, 5.0, 'infill_end_time must be greater than infill_start_time'];
-        yield 'duration too short' => [10.0, 19.999, 'replacement duration must be at least 10 seconds'];
     }
 
     public function testReplaceSectionAcceptsDurationLongerThanSixtySeconds(): void
@@ -330,23 +240,6 @@ final class SunoClientTest extends TestCase
             'infill_end_time' => 16.016]);
 
         self::assertCount(1, $transport->requests);
-    }
-
-    public function testReplaceSectionRejectsNonFiniteTimes(): void
-    {
-        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: new QueueHttpClient([]), maxRetries: 0));
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('infill_end_time must be a finite number');
-        $client->replaceSection->create([
-            'task_id' => 'task_1',
-            'audio_id' => 'audio_1',
-            'lyrics' => 'solo',
-            'full_lyrics' => '[Verse] solo',
-            'tags' => 'rock',
-            'title' => 'Song',
-            'infill_start_time' => 0.0,
-            'infill_end_time' => INF]);
     }
 
     public function testTextToMusicRunReturnsTypedCompletedResponse(): void
@@ -408,21 +301,6 @@ final class SunoClientTest extends TestCase
         self::assertSame('/api/v1/suno/generate_persona', $transport->requests[1]->getUri()->getPath());
         self::assertSame('/api/v1/suno/get_timestamped_lyrics', $transport->requests[2]->getUri()->getPath());
         self::assertSame('/api/v1/suno/boost_style', $transport->requests[3]->getUri()->getPath());
-    }
-
-    public function testSynchronousResourcesRejectMissingRequiredFieldsBeforeRequest(): void
-    {
-        $transport = new QueueHttpClient([]);
-        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('task_id is required');
-
-        try {
-            $this->runWithoutRequiredFields($client->checkVoice);
-        } finally {
-            self::assertSame([], $transport->requests);
-        }
     }
 
     public function testPersonasCreateAndReadRunAPIResource(): void
@@ -633,29 +511,5 @@ final class SunoClientTest extends TestCase
         self::assertSame($params, json_decode((string) $transport->requests[0]->getBody(), true, 512, JSON_THROW_ON_ERROR));
         self::assertSame('GET', $transport->requests[2]->getMethod());
         self::assertSame('/api/v1/music_from_sample/sample_task', $transport->requests[2]->getUri()->getPath());
-    }
-
-    public function testMusicFromSampleRejectsInvalidWindowBeforeRequest(): void
-    {
-        $transport = new QueueHttpClient([]);
-        $client = new SunoClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('end_seconds must be greater than start_seconds');
-
-        try {
-            $client->musicFromSample->create([
-                'model' => 'suno-v5.5',
-                'audio_url' => 'https://file.runapi.ai/source.mp3',
-                'start_seconds' => 20,
-                'end_seconds' => 20]);
-        } finally {
-            self::assertSame([], $transport->requests);
-        }
-    }
-
-    private function runWithoutRequiredFields(SyncResource $resource): void
-    {
-        $resource->run([]);
     }
 }

@@ -14,8 +14,6 @@ use RunApi\Suno\Models\CompletedAudioTaskResponse;
  */
 readonly class TextToMusic extends AudioResource
 {
-    public const ACTION = 'suno/text-to-music';
-
     /**
      * Submits a song-generation task and returns immediately with a task id.
      *
@@ -79,6 +77,6 @@ readonly class TextToMusic extends AudioResource
      */
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'text_to_music', self::ACTION, ['suno-v4', 'suno-v4.5', 'suno-v4.5-all', 'suno-v4.5-plus', 'suno-v5', 'suno-v5.5']);
+        return new self($http, 'text_to_music');
     }
 }

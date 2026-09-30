@@ -8,10 +8,8 @@ use RunApi\Core\Http\HttpClient;
 
 readonly class StitchAudio extends AudioResource
 {
-    public const ACTION = 'suno/stitch-audio';
-
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, 'stitch_audio', self::ACTION);
+        return new self($http, 'stitch_audio');
     }
 }

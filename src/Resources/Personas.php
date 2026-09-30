@@ -20,8 +20,6 @@ use RunApi\Suno\Models\PersonaResourceResponse;
  */
 readonly class Personas extends HybridResource
 {
-    public const ACTION = 'suno/personas';
-
     private const ENDPOINT = '/api/v1/personas';
 
     /**
@@ -29,7 +27,7 @@ readonly class Personas extends HybridResource
      */
     public static function fromHttp(HttpClient $http): self
     {
-        return new self($http, self::ENDPOINT, self::ACTION, PersonaCreationResponse::class);
+        return new self($http, self::ENDPOINT, PersonaCreationResponse::class);
     }
 
     /**

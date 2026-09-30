@@ -13,8 +13,6 @@ use RunApi\Suno\Models\GetTimestampedLyricsResponse;
  */
 readonly class TimestampedLyrics extends SyncResource
 {
-    public const ACTION = 'suno/timestamped-lyrics';
-
     private const ENDPOINT = '/api/v1/timestamped_lyrics';
 
     /**
@@ -30,7 +28,7 @@ readonly class TimestampedLyrics extends SyncResource
      */
     public function __construct(HttpClient $http)
     {
-        parent::__construct($http, self::ENDPOINT, self::ACTION, GetTimestampedLyricsResponse::class, ['source_audio_id']);
+        parent::__construct($http, self::ENDPOINT, GetTimestampedLyricsResponse::class);
     }
 
     /**
